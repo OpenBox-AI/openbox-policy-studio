@@ -23,12 +23,16 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
+import re
+
 from .bindings import load_bindings
 from .extract import extractor_from_env
+from .firms import FirmProfile, profile_from_text, write_bindings
 from .graph import Services, build_graph, compile_nda
 from .jev import judge_from_env
 from .models import CompileReport
 from .openbox_api import RecordingBackend, apply_all, backend_from_env, fetch_activity_events
+from .platform_context import ExistingRule, load_context
 from .templates import describe
 
 app = FastAPI(title="NDA → OpenBox")
@@ -195,13 +199,70 @@ def _report_json(report: CompileReport, bindings, services: Services) -> dict[st
 _JUDGE = None
 
 
-def _services(bindings) -> Services:
+_RULES: dict[str, tuple[float, list[ExistingRule]]] = {}
+
+
+async def _current_rules(agent_id: str) -> list[ExistingRule]:
+    """The agent's current policy rules, live from OpenBox (cached a minute).
+
+    The conflict check compares a new firm's rules with what is already on
+    the agent, so it must see what is there now, not a snapshot.
+    """
+
+    base = os.environ.get("OPENBOX_BACKEND_URL", "http://localhost:3000").rstrip("/")
+    key = os.environ.get("OPENBOX_ORG_API_KEY", "").strip()
+    cached = _RULES.get(agent_id)
+    if cached and time.monotonic() - cached[0] < 60:
+        return cached[1]
+    rules: list[ExistingRule] = []
+    if key:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(
+                    f"{base}/agent/{agent_id}/policy-rule",
+                    headers={"X-API-Key": key},
+                    params={"limit": 200},
+                )
+            page = r.json().get("data", {})
+            rows = page.get("data", page) if isinstance(page, dict) else page
+            rules = [
+                ExistingRule(
+                    id=x["id"],
+                    base_rule_id=x.get("base_rule_id", ""),
+                    rule_name=x["rule_name"],
+                    decision=x["decision"],
+                    priority=x.get("priority", 0),
+                    match_mode=x.get("match_mode", "all"),
+                    conditions=x.get("conditions", []),
+                    is_active=x.get("is_active", False),
+                    created_at=x.get("created_at", ""),
+                )
+                for x in rows or []
+                if x.get("is_current_version", True)
+            ]
+        except Exception:
+            rules = []
+    _RULES[agent_id] = (time.monotonic(), rules)
+    return rules
+
+
+async def _services(bindings) -> Services:
     global _JUDGE
     if _JUDGE is None:
         _JUDGE = judge_from_env()
+    platform = load_context(Path(os.environ.get("PLATFORM_DIR", "platform")))
+    for agent in bindings.all_agents:
+        live = await _current_rules(agent.id)
+        if live:
+            platform.existing_rules[agent.id] = live
     # Propose only: a recording backend means nothing is created yet.
     return Services(
-        _JUDGE, extractor_from_env(), RecordingBackend(), bindings, events=_event_source()
+        _JUDGE,
+        extractor_from_env(),
+        RecordingBackend(),
+        bindings,
+        events=_event_source(),
+        platform=platform,
     )
 
 
@@ -213,7 +274,7 @@ async def agent_graph(matter: str = "trial") -> JSONResponse:
     if not bindings_path.exists():
         raise HTTPException(404, f"unknown matter {matter}")
     bindings = load_bindings(bindings_path)
-    services = _services(bindings)
+    services = await _services(bindings)
     for agent_id, graph in list(bindings.graphs.items()):
         bindings.graphs[agent_id] = await services.map_agent(graph)
     return JSONResponse({"graphs": _graph_json(bindings), "platform": _platform_json(services)})
@@ -239,25 +300,124 @@ def _detect_matter(text: str, chosen: str) -> str:
             hits.append((score, path.stem))
     if not hits:
         return chosen
+    if any(stem == chosen for _, stem in hits):
+        return chosen  # the document does name the chosen firm; the officer's choice stands
     hits.sort(reverse=True)
     if len(hits) > 1 and hits[0][0] == hits[1][0]:
-        return chosen  # a tie (two matters for one party) is the officer's call
+        return chosen  # a tie (two firms for one party) is the officer's call
     return hits[0][1]
+
+
+async def _save_upload(nda: UploadFile) -> Path:
+    suffix = Path(nda.filename or "nda.txt").suffix or ".txt"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as handle:
+        handle.write(await nda.read())
+        return Path(handle.name)
+
+
+@app.get("/agents")
+async def agents() -> JSONResponse:
+    """The organisation's agents on OpenBox, for the firm form's agent picker."""
+
+    base = os.environ.get("OPENBOX_BACKEND_URL", "http://localhost:3000").rstrip("/")
+    key = os.environ.get("OPENBOX_ORG_API_KEY", "").strip()
+    if not key:
+        return JSONResponse([])
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(
+            f"{base}/agent/list", params={"page": 0, "perPage": 100}, headers={"X-API-Key": key}
+        )
+    page = r.json().get("data", [])
+    rows = page.get("data", page) if isinstance(page, dict) else page
+    known = {a.id: a.name for p in BINDINGS_DIR.glob("*.yaml") for a in load_bindings(p).all_agents}
+    return JSONResponse(
+        [
+            {
+                "id": a["id"],
+                "name": a.get("agent_name") or known.get(a["id"]) or a["id"][:8],
+                "graph": (Path("graphs") / f"{a['id']}.json").exists(),
+            }
+            for a in rows or []
+        ]
+    )
+
+
+# Contracts uploaded for a firm that does not exist yet, until the form is saved.
+_FIRM_DRAFTS: dict[str, Path] = {}
+
+
+@app.post("/firms/draft")
+async def firm_draft(contract: UploadFile = File(...)) -> JSONResponse:
+    """Read the firm out of its contract; nothing is written yet."""
+
+    from . import pdf as _pdf
+
+    source = await _save_upload(contract)
+    text = _pdf.read_text(source)
+    profile = await profile_from_text(text)
+    token = uuid.uuid4().hex[:12]
+    _FIRM_DRAFTS[token] = source
+    existing = {p.stem for p in BINDINGS_DIR.glob("*.yaml")}
+    if profile.slug in existing:
+        profile.slug = f"{profile.slug}-{token[:4]}"
+    return JSONResponse({"token": token, "profile": profile.model_dump(), "clauses": len(_pdf.split_clauses(text))})
+
+
+class FirmRequest(BaseModel):
+    token: str
+    slug: str
+    disclosing_party: str
+    disclosing_party_aliases: list[str] = []
+    codenames: list[str] = []
+    purpose: str = ""
+    covered_folders: list[str]
+    competitor_folders: dict[str, str] = {}
+    agent_id: str
+    agent_name: str
+    representative: bool = False
+
+
+@app.post("/firms")
+async def create_firm(req: FirmRequest) -> JSONResponse:
+    """Write the firm's bindings and compile the contract it was created from."""
+
+    source = _FIRM_DRAFTS.pop(req.token, None)
+    if source is None or not source.exists():
+        raise HTTPException(404, "contract upload expired; upload it again")
+    if not req.covered_folders:
+        raise HTTPException(422, "choose the folder the firm's material lives in")
+    profile = FirmProfile(
+        disclosing_party=req.disclosing_party,
+        disclosing_party_aliases=req.disclosing_party_aliases,
+        codenames=req.codenames,
+        purpose=req.purpose,
+        slug=re.sub(r"[^a-z0-9]+", "-", req.slug.lower()).strip("-") or "firm",
+    )
+    write_bindings(
+        BINDINGS_DIR,
+        profile,
+        agent_id=req.agent_id,
+        agent_name=req.agent_name,
+        representative=req.representative,
+        covered_folders=[f.strip().rstrip("/") + "/" for f in req.covered_folders if f.strip()],
+        competitor_folders={k: v.strip().rstrip("/") + "/" for k, v in req.competitor_folders.items() if v.strip()},
+    )
+    return await _compile(source, profile.slug, profile.slug)
 
 
 @app.post("/propose")
 async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONResponse:
     if not (BINDINGS_DIR / f"{matter}.yaml").exists():
         raise HTTPException(404, f"unknown matter {matter}")
-    suffix = Path(nda.filename or "nda.txt").suffix or ".txt"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as handle:
-        handle.write(await nda.read())
-        source = Path(handle.name)
+    source = await _save_upload(nda)
     from . import pdf as _pdf
 
-    detected = _detect_matter(_pdf.read_text(source), matter)
+    return await _compile(source, _detect_matter(_pdf.read_text(source), matter), matter)
+
+
+async def _compile(source: Path, detected: str, matter: str) -> JSONResponse:
     bindings = load_bindings(BINDINGS_DIR / f"{detected}.yaml")
-    services = _services(bindings)
+    services = await _services(bindings)
     try:
         # Propose is read-only, so the graph runs bare here. Governing the compiler
         # itself (the CLI path) re-instruments the process per handler, which does
@@ -266,8 +426,10 @@ async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONR
     finally:
         source.unlink(missing_ok=True)
     # Reset the recording backend's pretend statuses; the officer decides.
+    # Rows the build or verify step put in review keep that mark and its note.
     report.controls = [
-        c.model_copy(update={"status": "draft", "remote_id": None}) for c in report.controls
+        c.model_copy(update={"status": "draft" if c.status != "review" else "review", "remote_id": None})
+        for c in report.controls
     ]
     draft_id = uuid.uuid4().hex[:12]
     _DRAFTS[draft_id] = (report, detected)

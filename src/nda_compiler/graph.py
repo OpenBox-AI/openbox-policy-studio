@@ -23,7 +23,7 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from . import pdf
+from . import conflicts, pdf
 from .agent_graph import AgentGraph, observe, with_roles
 from .bindings import Bindings
 from .extract import Extractor, extract_all, in_clause
@@ -216,6 +216,16 @@ def build_graph(services: Services):
                     continue
                 seen[key] = control
                 controls.append(control)
+        # Other firms' rules already on the agent: overlapping folders, opposite
+        # decisions on the same conditions, generic markings.
+        by_agent: dict[str, list[Control]] = {}
+        for control in controls:
+            by_agent.setdefault(control.agent_id, []).append(control)
+        controls = [
+            c
+            for agent_id, group in by_agent.items()
+            for c in conflicts.check(group, services.platform.rules_for(agent_id), services.bindings.matter)
+        ]
         # Every field a rule uses must be one OPA actually sees.
         for control in controls:
             unknown = [
@@ -245,6 +255,7 @@ def build_graph(services: Services):
             if control.status == "review":
                 verified.append(control.model_copy(update={"verify_probability": probability}))
                 review.append(f"§{control.clause_id}: {control.note}")
+                continue
             elif probability >= services.verify_threshold:
                 verified.append(
                     control.model_copy(

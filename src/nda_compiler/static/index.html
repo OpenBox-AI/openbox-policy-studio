@@ -22,6 +22,7 @@
   --shadow-sm:0 1px 2px rgba(16,24,40,.05); --shadow-md:0 4px 8px -2px rgba(16,24,40,.1),0 2px 4px -2px rgba(16,24,40,.06);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--background);color:var(--foreground);font:500 14px/1.5 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
 button:focus-visible,[tabindex]:focus-visible,select:focus-visible,input:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring);border-color:var(--primary)}
@@ -49,6 +50,8 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .page-head .right{display:flex;align-items:center;gap:12px;flex:none}
 .field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted-fg)}
 select.input{appearance:none;-webkit-appearance:none;height:40px;min-width:260px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237B8291' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding:0 40px 0 12px;font:inherit;color:var(--heading);box-shadow:var(--shadow-sm)}
+.linkbtn{align-self:flex-start;margin-top:4px;font-size:12px;color:var(--primary-700);padding:0}
+.linkbtn:hover{text-decoration:underline}
 .live{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card);font-size:13px;color:var(--muted-fg);box-shadow:var(--shadow-sm)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
 .dot.off{background:var(--err)}.dot.wait{background:var(--warn)}
@@ -190,6 +193,28 @@ tr.held .cb{visibility:hidden}
 .row.applying .dot{background:var(--info);animation:pulse 1s infinite}
 .empty{color:var(--muted-fg);font-size:13px;padding:32px 16px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-md)}
 
+/* create-firm dialog (dialog.tsx) */
+#dlg{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(16,24,40,.45)}
+#dlg.show{display:flex}
+.dialog{width:640px;max-width:calc(100vw - 32px);max-height:calc(100vh - 48px);overflow:auto;background:var(--card);border-radius:var(--radius);box-shadow:0 20px 40px -12px rgba(16,24,40,.3);display:flex;flex-direction:column}
+.dialog header{padding:20px 24px 12px}
+.dialog h2{margin:0 0 4px;font-size:18px;font-weight:600;color:var(--heading)}
+.dialog header p{margin:0;color:var(--muted-fg);font-size:13px}
+.dialog .body{padding:8px 24px 20px;display:flex;flex-direction:column;gap:14px}
+.dialog label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--heading);font-weight:500}
+.dialog label.f small{font-weight:400;color:var(--muted-fg)}
+.dialog input[type=text],.dialog select,.dialog textarea{font:inherit;color:var(--heading);border:1px solid var(--border);border-radius:var(--radius-md);padding:9px 12px;background:var(--card)}
+.dialog textarea{min-height:56px;resize:vertical}
+.dialog .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dialog .comp{display:grid;grid-template-columns:1fr 160px;gap:8px;align-items:center}
+.dialog .comp span{font-size:13px;color:var(--heading)}
+.dialog footer{display:flex;gap:10px;justify-content:flex-end;padding:14px 24px;border-top:1px solid var(--border)}
+.dialog .dropz{border:1px dashed var(--border);border-radius:var(--radius);padding:36px 20px;text-align:center;color:var(--muted-fg);cursor:pointer;background:var(--muted)}
+.dialog .dropz b{display:block;color:var(--heading);font-weight:600;margin-bottom:4px}
+.dialog .dropz.busy{opacity:.6}
+.toggle{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--heading)}
+.toggle input{width:16px;height:16px;accent-color:var(--primary)}
+.err{color:var(--err-fg);font-size:13px}
 .fly{position:fixed;z-index:50;pointer-events:none;border-radius:var(--radius-md);background:var(--primary-100);border:1px solid var(--primary);transition:all .55s cubic-bezier(.2,.8,.2,1)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation:none!important}}
 @media (max-width:1023px){#sidebar{display:none}#main{margin-left:0}}
@@ -238,7 +263,7 @@ tr.held .cb{visibility:hidden}
       <p>Upload a non-disclosure agreement. Each clause the agent can be held to becomes a policy you review and apply.</p>
     </div>
     <div class="right">
-      <label class="field">Matter<select id="matter" class="input" aria-label="Matter"><option>loading…</option></select></label>
+      <label class="field">Firm<select id="matter" class="input" aria-label="Firm"><option>loading…</option></select><button type="button" class="linkbtn" id="newfirm">+ Create firm from a contract</button></label>
       <label class="field">OpenBox<span class="live"><span class="dot wait" id="livedot"></span><span id="livetxt">connecting…</span></span></label>
     </div>
   </div>
@@ -307,10 +332,38 @@ tr.held .cb{visibility:hidden}
   </div>
 </main>
 
+<div id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+  <div class="dialog">
+    <header><h2 id="dlg-title">Create firm</h2><p id="dlg-sub">Upload the firm's contract. The Studio reads the parties, codenames and folders out of it.</p></header>
+    <div class="body" id="dlg-step1">
+      <label class="dropz" id="dlg-drop"><b>Upload the contract</b>PDF, Word or Markdown<input type="file" id="dlg-file" accept=".pdf,.docx,.md,.txt" hidden></label>
+      <div class="err" id="dlg-err1"></div>
+    </div>
+    <form class="body" id="dlg-step2" hidden>
+      <div class="row2">
+        <label class="f">Firm<input type="text" id="f-party" required></label>
+        <label class="f">Short name<small>used in rule names</small><input type="text" id="f-slug" required pattern="[a-z0-9-]+"></label>
+      </div>
+      <div class="row2">
+        <label class="f">Also referred to as<small>comma separated</small><input type="text" id="f-aliases"></label>
+        <label class="f">Codenames and markings<small>comma separated</small><input type="text" id="f-codenames"></label>
+      </div>
+      <label class="f">Folder holding the firm's material<small>as the agent sees it, e.g. 0005/70001/</small><input type="text" id="f-folder" required placeholder="0005/70001/"></label>
+      <label class="f">Purpose<textarea id="f-purpose"></textarea></label>
+      <div id="f-comps"></div>
+      <label class="f">Agent these policies apply to<select id="f-agent" required></select></label>
+      <label class="toggle"><input type="checkbox" id="f-rep">This agent is a Representative under the contract (allowed to handle the material)</label>
+      <div class="err" id="dlg-err2"></div>
+    </form>
+    <footer><button type="button" class="btn outline" id="dlg-cancel">Cancel</button><button type="button" class="btn primary" id="dlg-save" hidden>Create firm and compile</button></footer>
+  </div>
+</div>
+
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
 const $ = id => document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let MATTER = new URLSearchParams(location.search).get('matter') || 'trial';
 (async () => { try { const ms = await (await fetch('/matters')).json();
@@ -350,6 +403,36 @@ function markBound(){}
 function renderPlatform(){}
 fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([]));
 
+/* ── create firm ── */
+const dlg=$('dlg'); let FIRM_TOKEN=null;
+$('newfirm').addEventListener('click',()=>{dlg.classList.add('show');$('dlg-step1').hidden=false;$('dlg-step2').hidden=true;$('dlg-save').hidden=true;$('dlg-err1').textContent='';$('dlg-err2').textContent='';$('dlg-file').value='';$('dlg-drop').querySelector('b').textContent='Upload the contract';});
+$('dlg-cancel').addEventListener('click',()=>dlg.classList.remove('show'));
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.classList.remove('show');});
+$('dlg-file').addEventListener('change',async()=>{const f=$('dlg-file').files[0];if(!f)return;$('dlg-drop').classList.add('busy');$('dlg-drop').querySelector('b').textContent=`Reading ${f.name}…`;
+  const fd=new FormData();fd.append('contract',f);
+  let d;try{const r=await fetch('/firms/draft',{method:'POST',body:fd});d=await r.json();if(!r.ok)throw new Error(d.detail||'could not read the contract');}catch(e){$('dlg-err1').textContent=e.message;$('dlg-drop').classList.remove('busy');return;}
+  FIRM_TOKEN=d.token;const p=d.profile;
+  $('f-party').value=p.disclosing_party;$('f-slug').value=p.slug;$('f-aliases').value=p.disclosing_party_aliases.join(', ');$('f-codenames').value=p.codenames.join(', ');
+  $('f-folder').value=p.folder_references[0]||'';$('f-purpose').value=p.purpose;
+  $('f-comps').innerHTML=p.competitors.length?`<label class="f">Named competitors<small>folder for each, or leave blank to skip</small></label>`+p.competitors.map(c=>`<div class="comp"><span>${esc(c)}</span><input type="text" data-comp="${esc(c)}" placeholder="folder, e.g. 0005/20001/"></div>`).join(''):'';
+  try{const ag=await (await fetch('/agents')).json();$('f-agent').innerHTML=ag.map(a=>`<option value="${a.id}" data-name="${esc(a.name)}">${esc(a.name)}${a.graph?' · graph compiled':''}</option>`).join('')||'<option value="">no agents found</option>';}catch{$('f-agent').innerHTML='<option value="">OpenBox unreachable</option>';}
+  $('dlg-sub').textContent=`${d.clauses} clauses read from ${f.name}. Confirm what was found and pick the agent.`;
+  $('dlg-step1').hidden=true;$('dlg-step2').hidden=false;$('dlg-save').hidden=false;$('dlg-drop').classList.remove('busy');});
+$('dlg-save').addEventListener('click',async()=>{
+  const form=$('dlg-step2'); if(!form.reportValidity())return;
+  const comps={};document.querySelectorAll('#f-comps input').forEach(i=>{if(i.value.trim())comps[i.dataset.comp]=i.value.trim();});
+  const opt=$('f-agent').selectedOptions[0];
+  const body={token:FIRM_TOKEN,slug:$('f-slug').value,disclosing_party:$('f-party').value,disclosing_party_aliases:$('f-aliases').value.split(',').map(s=>s.trim()).filter(Boolean),codenames:$('f-codenames').value.split(',').map(s=>s.trim()).filter(Boolean),purpose:$('f-purpose').value,covered_folders:[$('f-folder').value],competitor_folders:comps,agent_id:opt.value,agent_name:opt.dataset.name,representative:$('f-rep').checked};
+  $('dlg-save').disabled=true;$('dlg-save').textContent='Creating…';
+  let d;try{const r=await fetch('/firms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});d=await r.json();if(!r.ok)throw new Error(d.detail||'could not create the firm');}catch(e){$('dlg-err2').textContent=e.message;$('dlg-save').disabled=false;$('dlg-save').textContent='Create firm and compile';return;}
+  dlg.classList.remove('show');$('dlg-save').disabled=false;$('dlg-save').textContent='Create firm and compile';
+  MATTER=d.matter;const u=new URL(location);u.searchParams.set('matter',MATTER);history.replaceState(null,'',u);
+  const ms=await (await fetch('/matters')).json();$('matter').innerHTML=ms.map(m=>`<option value="${m.id}" ${m.id===MATTER?'selected':''}>${m.label}</option>`).join('');
+  draft=d;$('bar').style.width='100%';d.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.querySelector('em').textContent=' '+Math.round(x.ms)+' ms';}});
+  $('s-clauses').textContent=d.coverage.clauses;$('s-policies').textContent=d.controls.length;$('p-sub').textContent=`Firm ${MATTER} created · ${d.controls.length} policies from its contract. Nothing is created on OpenBox until you apply.`;
+  if(d.graphs&&d.graphs.length)renderGraph(d.graphs);render(d);loadState();
+});
+
 /* ── upload ── */
 const drop=$('drop'), file=$('file');
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
@@ -382,7 +465,6 @@ function fail(msg){$('bar').style.width='0';document.querySelectorAll('.stage').
 
 /* ── proposals table ── */
 const DECISION={BLOCK:'failed',HALT:'failed',REQUIRE_APPROVAL:'held',CONSTRAIN:'applying',ALLOW:'active'};
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function bindCell(b){
   if(!b||!b.tool)return '<span class="bind">—</span>';
   if(b.tool==='every output')return '<span class="bind">Scans <code>every output</code></span>';
