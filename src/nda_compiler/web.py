@@ -72,6 +72,8 @@ async def firms() -> JSONResponse:
 async def openbox_state(firm: str = "trial") -> JSONResponse:
     """What is enforced on the firm's agent right now, straight from OpenBox."""
 
+    if not (BINDINGS_DIR / f"{firm}.yaml").exists():
+        raise HTTPException(404, f"unknown firm {firm}")
     bindings = load_bindings(BINDINGS_DIR / f"{firm}.yaml")
     base = os.environ.get("OPENBOX_BACKEND_URL", "http://localhost:3000").rstrip("/")
     key = os.environ.get("OPENBOX_ORG_API_KEY", "").strip()

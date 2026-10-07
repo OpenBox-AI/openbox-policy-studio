@@ -381,7 +381,10 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let FIRM = new URLSearchParams(location.search).get('firm') || new URLSearchParams(location.search).get('matter') || 'trial';
 let FIRMS = [];
-async function loadFirms(){ try { FIRMS = await (await fetch('/firms')).json(); } catch { FIRMS = [{id: FIRM, label: FIRM}]; } renderFirms(); }
+async function loadFirms(){ try { FIRMS = await (await fetch('/firms')).json(); } catch { FIRMS = [{id: FIRM, label: FIRM}]; }
+  // A firm that no longer exists (deleted, old link) falls back to the first one.
+  if (FIRMS.length && !FIRMS.some(f => f.id === FIRM)) { FIRM = FIRMS[0].id; const u = new URL(location); u.searchParams.delete('matter'); u.searchParams.set('firm', FIRM); history.replaceState(null, '', u); }
+  renderFirms(); }
 function renderFirms(){
   const cur = FIRMS.find(f => f.id === FIRM); $('firmlabel').textContent = cur ? cur.label : FIRM;
   const menu = $('firmmenu'); menu.innerHTML = '';
@@ -402,7 +405,6 @@ function closeFirms(){ $('firmmenu').hidden = true; $('firmbtn').setAttribute('a
 $('firmbtn').addEventListener('click', () => { const open = $('firmmenu').hidden; $('firmmenu').hidden = !open; $('firmbtn').setAttribute('aria-expanded', String(open)); });
 document.addEventListener('click', e => { if (!$('firmdd').contains(e.target)) closeFirms(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFirms(); });
-loadFirms();
 
 /* ── dropzone backdrop: the OpenBox auth-panel gradient, slowly moving ── */
 const canvas = $('scene');
@@ -434,7 +436,7 @@ function renderGraph(gs){
 }
 function markBound(){}
 function renderPlatform(){}
-fetch(`/agent-graph?firm=${FIRM}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([]));
+loadFirms().then(()=>fetch(`/agent-graph?firm=${FIRM}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([])));
 
 /* ── create firm ── */
 const dlg=$('dlg'); let FIRM_TOKEN=null;
@@ -543,7 +545,7 @@ function row(o){const e=document.createElement('div');e.className='row '+(o.stat
   <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="when">${o.when?esc(o.when):''}</span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}${o.href?`<a class="open" href="${o.href}" target="_blank" rel="noopener">Open in OpenBox<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>`:''}`;
   if(o.opa)e.classList.add('opa'); return e;}
 async function loadState(){
-  try{const r=await fetch(`/openbox/state?firm=${FIRM}`);const s=await r.json();
+  try{const r=await fetch(`/openbox/state?firm=${FIRM}`);if(r.status===404){await loadFirms();return loadState();}const s=await r.json();if(!r.ok)throw new Error(s.detail||r.status);
     $('livetxt').textContent=s.backend; $('livedot').className='dot';
     $('sidesub').textContent=`Agent: ${s.agent_name} · ${s.items.length} active, ${s.items.filter(i=>i.opa_loaded).length} synced to OPA`; $('s-active').textContent=s.items.length;
     // Rows applied from this page stay until OpenBox lists them by name, so a
@@ -552,9 +554,9 @@ async function loadState(){
     ledger.innerHTML=''; keep.filter(e=>!names.has(e.querySelector('.nm').textContent)).forEach(e=>ledger.appendChild(e));
     s.items.forEach(it=>{const fresh=it.created_at&&(Date.now()-Date.parse(it.created_at))<120000;const e=row({name:it.name,kind:it.decision||'BLOCK',bc:DECISION[it.decision]||'failed',status:'active',label:fresh?'Active · new version':'Active',opa:it.opa_loaded,key:'r-'+it.id,note:it.note,when:ago(it.created_at),href:agentUrl(it.agent_id)});if(fresh)e.classList.add('fresh');ledger.appendChild(e);});
     if(!ledger.children.length)ledger.innerHTML='<div class="empty">No policies enforced on this agent yet.</div>';
-  }catch{$('livetxt').textContent='unreachable';$('livedot').className='dot off';$('sidesub').textContent='OpenBox is not reachable.';}
+  }catch(e){$('livetxt').textContent='unreachable';$('livedot').className='dot off';$('sidesub').textContent='The policy service did not answer. Check that OpenBox is running at the address in the top bar.';}
 }
-loadState(); $('refresh').addEventListener('click',loadState);
+loadFirms().then(loadState); $('refresh').addEventListener('click',loadState);
 
 /* ── apply ── */
 $('apply').addEventListener('click',async()=>{
