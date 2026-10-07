@@ -21,15 +21,13 @@ def test_profile_reads_the_contract():
 def test_write_bindings_round_trips(tmp_path):
     p = profile_from_text_fake((ROOT.parent / "Downloads" / "sample-ndas" / "nda-atlas-grid-energy.md").read_text())
     path = write_bindings(
-        tmp_path, p, agent_id="a1", agent_name="compliance agent", representative=False,
-        covered_folders=["0005/70001/"], competitor_folders={"Northwind Storage Partners": "0005/20001/"},
+        tmp_path, p, agent_id="a1", agent_name="compliance agent", covered_folders=["0005/70001/"]
     )
     from nda_compiler.bindings import load_bindings
 
     b = load_bindings(path, graphs_dir=tmp_path)
     assert b.matter == "atlas-grid-energy"
-    assert b.other_agents[0].id == "a1" and not b.representatives
-    assert b.competitor_folder("Northwind Storage Partners") == "0005/20001/"
+    assert b.agent.id == "a1" and b.covered_folders == ["0005/70001/"]
 
 
 def _control(tool, folder, decision, term=None):

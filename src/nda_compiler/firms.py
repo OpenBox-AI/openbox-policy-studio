@@ -5,8 +5,7 @@ the contract itself: the parties, the codenames and markings, the folder the
 material lives in when the contract cites one, the Purpose and any named
 competitors. This module reads those out of the document into a FirmProfile,
 and writes the bindings once the onboarding person has confirmed them and
-picked the agent. The only facts that are not in the contract are the agent
-and whether it counts as a Representative.
+picked the agent, which is the one fact that is not in the contract.
 """
 
 from __future__ import annotations
@@ -173,12 +172,9 @@ def write_bindings(
     *,
     agent_id: str,
     agent_name: str,
-    representative: bool,
     covered_folders: list[str],
-    competitor_folders: dict[str, str],
 ) -> Path:
     slug = profile.slug
-    agent = {"id": agent_id, "name": agent_name}
     body: dict[str, Any] = {
         "matter": slug,
         "disclosing_party": profile.disclosing_party,
@@ -187,9 +183,7 @@ def write_bindings(
         "codenames": profile.codenames,
         "purpose": profile.purpose,
         "covered_folders": covered_folders,
-        "competitor_folders": competitor_folders,
-        "representatives": [agent] if representative else [],
-        "other_agents": [] if representative else [agent],
+        "agent": {"id": agent_id, "name": agent_name},
     }
     path = directory / f"{slug}.yaml"
     path.write_text(

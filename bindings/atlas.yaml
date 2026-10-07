@@ -1,19 +1,23 @@
-# Atlas Grid Energy, Project Halcyon: a long-form NDA with every decision in it.
 matter: atlas
 disclosing_party: Atlas Grid Energy plc
-disclosing_party_aliases: [Atlas Grid Energy, Atlas]
+disclosing_party_aliases:
+- Atlas Grid Energy
+- Atlas
 receiving_party: Sellist Advisory LLP
-codenames: [Project Halcyon, Strictly Private]
-purpose: advising the Receiving Party's client on the valuation, grid-risk assessment and transaction structuring of the proposed acquisition of the Portfolio
+codenames:
+- Project Halcyon
+- Strictly Private
+purpose: advising the Receiving Party's client on the valuation, grid-risk assessment
+  and transaction structuring of the proposed acquisition of the Portfolio
 covered_folders:
-  - 0005/70001/
-competitor_folders:
-  Northwind Storage Partners: 0005/20001/
-  Kestrel Infrastructure Fund: 0005/20002/
-representatives: []
-other_agents:
-  - id: 16e4c8e5-0921-4946-ae5b-96fe1966e57d
-    name: compliance agent
-read_tools: [read_document]
-file_tools: [upload_document]
-outbound_tools: [send_email, http_post]
+- 0005/70001/
+agent:
+  id: 16e4c8e5-0921-4946-ae5b-96fe1966e57d
+  name: compliance agent
+read_tools:
+- read_document
+file_tools:
+- upload_document
+outbound_tools:
+- send_email
+- http_post

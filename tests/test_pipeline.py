@@ -50,21 +50,13 @@ async def test_compile_emits_grounded_controls(services):
     assert report.coverage["not_enforceable"] == 3
 
     access = [c for c in report.controls if c.kind == ControlKind.PERMITTED_RECIPIENTS]
-    # Two non-representatives x (read + file) x one covered folder, blocked ...
-    policy_rules = [c for c in access if c.payload["decision"] == "BLOCK" and not c.binding.get("competitor")]
-    assert len(policy_rules) == 4
-    # ... the one Representative explicitly allowed above them ...
-    allows = [c for c in access if c.payload["decision"] == "ALLOW"]
-    assert len(allows) == 2 and all(c.payload["priority"] == 95 for c in allows)
-    # ... and PepsiCo's folder, named in the clause and mapped in the bindings,
-    # closed to filing by all three agents.
-    competitor = [c for c in access if c.binding.get("competitor") == "PepsiCo"]
-    assert len(competitor) == 3
-    assert competitor[0].payload["conditions"][1]["right"]["value"] == "0001/20001/"
-    # §4 blocks every outbound tool: this matter has no exported graph, so the
-    # bindings' two outbound tools apply to all three agents.
+    # One agent x (read + file) x one covered folder, blocked.
+    policy_rules = [c for c in access if c.payload["decision"] == "BLOCK"]
+    assert len(policy_rules) == 2
+    # §4 covers every outbound tool; this matter has no exported graph, so the
+    # bindings' two outbound tools apply, with the clause's consent wording.
     sends = [c for c in report.controls if c.kind == ControlKind.THIRD_PARTY_DISCLOSURE]
-    assert len(sends) == 6
+    assert len(sends) == 2 and all(c.payload["decision"] == "REQUIRE_APPROVAL" for c in sends)
     assert all(c.binding["what"] == "send" for c in sends)
     rule = policy_rules[0].payload
     assert rule["decision"] == "BLOCK"

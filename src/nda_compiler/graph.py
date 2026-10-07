@@ -263,11 +263,9 @@ def build_graph(services: Services):
                     )
                 )
             else:
-                verified.append(
-                    control.model_copy(
-                        update={"verify_probability": probability, "status": "review"}
-                    )
-                )
+                # Below the threshold the rule is still proposed; it is simply
+                # not auto-applied by the CLI, and the score is recorded.
+                verified.append(control.model_copy(update={"verify_probability": probability}))
                 review.append(
                     f"§{control.clause_id}: judge gave {probability:.2f} for "
                     f"{summarize(control, services.bindings.all_agents)}"

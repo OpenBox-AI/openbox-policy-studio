@@ -9,16 +9,9 @@ codenames:
 purpose: evaluating integration risk for the proposed transaction between the parties
 covered_folders:
 - 0001/10001/
-competitor_folders:
-  PepsiCo: 0001/20001/
-representatives:
-- id: 8c705364-94f7-4764-8333-4edbb2d24a9b
+agent:
+  id: 8c705364-94f7-4764-8333-4edbb2d24a9b
   name: AmyClientIntelligenceAgent
-other_agents:
-- id: 73584fff-a6f4-41e4-a4b5-6e8df0a6a88f
-  name: BarryClientIntelligenceAgent
-- id: e65b05a8-f0ab-4f3c-9667-6087258a3589
-  name: ColinClientIntelligenceAgent
 read_tools:
 - read_document
 file_tools:

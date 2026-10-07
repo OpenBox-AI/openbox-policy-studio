@@ -371,10 +371,8 @@ class FirmRequest(BaseModel):
     codenames: list[str] = []
     purpose: str = ""
     covered_folders: list[str]
-    competitor_folders: dict[str, str] = {}
     agent_id: str
     agent_name: str
-    representative: bool = False
 
 
 @app.post("/firms")
@@ -398,9 +396,7 @@ async def create_firm(req: FirmRequest) -> JSONResponse:
         profile,
         agent_id=req.agent_id,
         agent_name=req.agent_name,
-        representative=req.representative,
         covered_folders=[f.strip().rstrip("/") + "/" for f in req.covered_folders if f.strip()],
-        competitor_folders={k: v.strip().rstrip("/") + "/" for k, v in req.competitor_folders.items() if v.strip()},
     )
     return await _compile(source, profile.slug, profile.slug)
 

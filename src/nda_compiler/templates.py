@@ -81,7 +81,6 @@ def _rule(
 ) -> Control:
     """One policy rule. Decisions, in the platform's own terms:
 
-    ALLOW            an explicit permission, placed above the blocks (priority 95)
     CONSTRAIN        let it run, inside the sandbox (the platform's only constraint)
     REQUIRE_APPROVAL hold for a person; chosen when the clause says "with consent"
     BLOCK            refuse the call; "shall not"
@@ -155,56 +154,31 @@ def _folder_rule(
 
 
 def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    """Who may handle the Disclosing Party's material, and who may not.
+    """Who may handle the Disclosing Party's material.
 
-    Three shapes, all on the folder the material lives in:
-      ALLOW  (priority 95) for each Representative: the permission the clause
-             grants, written down so it outranks any later block;
-      <decision> (priority 90) for every other agent on the covered folder:
-             BLOCK for "shall not", REQUIRE_APPROVAL for "with consent";
-      <decision> for every agent filing into a named competitor's folder,
-             when the clause names them and the bindings know their folder:
-             HALT when the clause calls it a material breach.
+    The agent is not a party to the NDA, so the clause's restriction applies
+    to it in full: one rule per tool that reads or files material, on the
+    folder the material lives in, with the clause's decision (BLOCK for
+    "shall not", REQUIRE_APPROVAL for "with consent", HALT for "material
+    breach").
     """
 
-    controls: list[Control] = []
-    competitors: dict[str, str] = {}
-    for name in obligation.prohibited_recipients:
-        hit = bindings.competitor(name)
-        if hit:
-            competitors[hit[0]] = hit[1]
-    # The general folder rules come from the clause saying who may see the
-    # material. A clause that only names outsiders (competitors, bidders)
-    # produces rules for their folders, or nothing when none is mapped.
-    named_outsiders = [
-        n for n in obligation.prohibited_recipients
+    # A clause that only names outsiders ("shall not disclose to Northwind or
+    # Kestrel") is about who a recipient is, which a rule on the agent's own
+    # folders cannot see; it is reported, not turned into a folder rule.
+    named = [
+        n
+        for n in obligation.prohibited_recipients
         if n[:1].isupper() and not n.lower().startswith(("any", "other", "the "))
     ]
-    if obligation.permitted_recipients or not (competitors or named_outsiders):
-        for agent in bindings.representatives:
-            for tool in bindings.tools_for(agent).access:
-                for folder in bindings.covered_folders:
-                    rule = _folder_rule(obligation, bindings, agent, tool, folder, "ALLOW", " permitted", 95)
-                    if rule:
-                        controls.append(rule)
-        for agent in bindings.other_agents:
-            for tool in bindings.tools_for(agent).access:
-                for folder in bindings.covered_folders:
-                    rule = _folder_rule(obligation, bindings, agent, tool, folder, obligation.decision, "")
-                    if rule:
-                        controls.append(rule)
-    # Disclosure to a named competitor is never a matter of approval: refuse
-    # it, and stop the run when the clause calls it a material breach.
-    competitor_decision = "HALT" if obligation.decision == "HALT" else "BLOCK"
-    for name, folder in competitors.items():
-        for agent in bindings.all_agents:
-            for tool in bindings.tools_for(agent).file:
-                rule = _folder_rule(
-                    obligation, bindings, agent, tool, folder, competitor_decision, f" ({name})"
-                )
-                if rule:
-                    rule.binding["competitor"] = name
-                    controls.append(rule)
+    if named and not obligation.permitted_recipients:
+        return []
+    controls: list[Control] = []
+    for tool in bindings.tools_for(bindings.agent).access:
+        for folder in bindings.covered_folders:
+            rule = _folder_rule(obligation, bindings, bindings.agent, tool, folder, obligation.decision, "")
+            if rule:
+                controls.append(rule)
     return controls
 
 
@@ -217,12 +191,12 @@ def secure_processing(obligation: Obligation, bindings: Bindings) -> list[Contro
     """
 
     controls = []
-    for agent in bindings.all_agents:
-        for tool in bindings.tools_for(agent).read:
-            for folder in bindings.covered_folders:
-                rule = _folder_rule(obligation, bindings, agent, tool, folder, "CONSTRAIN", " sandboxed", 80)
-                if rule:
-                    controls.append(rule)
+    agent = bindings.agent
+    for tool in bindings.tools_for(agent).read:
+        for folder in bindings.covered_folders:
+            rule = _folder_rule(obligation, bindings, agent, tool, folder, "CONSTRAIN", " sandboxed", 80)
+            if rule:
+                controls.append(rule)
     return controls
 
 
@@ -283,7 +257,7 @@ def marked_material(obligation: Obligation, bindings: Bindings) -> list[Control]
 
     words = sorted({*obligation.marked_terms, *bindings.codenames})
     controls = []
-    for agent in bindings.other_agents:
+    for agent in bindings.all_agents:
         tools = bindings.tools_for(agent)
         for tool in [*tools.file, *tools.outbound, *(tools.graph.with_role("writes_internal") if tools.graph else [])]:
             arg = tool.text_arg
@@ -358,7 +332,7 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
                 f"§{obligation.clause_id} marked material: the clause names no marking or "
                 f"codename to match on, so no rule is proposed."
             )
-        for agent in bindings.other_agents:
+        for agent in bindings.all_agents:
             tools = bindings.tools_for(agent)
             writers = [*tools.file, *tools.outbound, *(tools.graph.with_role("writes_internal") if tools.graph else [])]
             if not any(t.text_arg for t in writers):
@@ -367,28 +341,25 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
                     f"sending tool with a free-text argument to check for the markings."
                 )
     if obligation.kind == ControlKind.PERMITTED_RECIPIENTS:
-        # Only named parties can have a folder; "any other person" is the rule itself.
-        unmapped = [
+        named = [
             n
             for n in obligation.prohibited_recipients
-            if not bindings.competitor_folder(n)
-            and n[:1].isupper()
-            and not n.lower().startswith(("any", "other", "the "))
+            if n[:1].isupper() and not n.lower().startswith(("any", "other", "the "))
         ]
-        if unmapped:
+        if named and not obligation.permitted_recipients:
             notes.append(
-                f"§{obligation.clause_id}: the clause names {', '.join(unmapped)} as forbidden "
-                f"recipients, but the matter's bindings give no folder for them, so filing into "
-                f"their folder cannot be matched. Add competitor_folders to the bindings."
+                f"§{obligation.clause_id}: the clause forbids disclosure to {', '.join(named)}. "
+                f"A policy rule sees the agent's own folders, not who a recipient is, so this "
+                f"is covered only in so far as the access rules keep the material in "
+                f"{', '.join(bindings.covered_folders)}."
             )
-        for agent in bindings.other_agents:
-            for tool in bindings.tools_for(agent).access:
-                if tool.document_arg is None:
-                    notes.append(
-                        f"§{obligation.clause_id}: {tool.name}({', '.join(tool.args)}) on "
-                        f"{agent.name} handles material but has no path argument, so it cannot "
-                        f"be scoped to a folder."
-                    )
+        for tool in bindings.tools_for(bindings.agent).access:
+            if tool.document_arg is None:
+                notes.append(
+                    f"§{obligation.clause_id}: {tool.name}({', '.join(tool.args)}) on "
+                    f"{bindings.agent.name} handles material but has no path argument, so it "
+                    f"cannot be scoped to a folder."
+                )
     return notes
 
 
@@ -413,12 +384,7 @@ def describe(control: Control, bindings: Bindings) -> str:
     payload's operators and placeholder ids.
     """
 
-    names = {a.id: a.name for a in bindings.all_agents}
-    agent = names.get(control.agent_id, control.agent_id)
-    is_rep = control.agent_id in {a.id for a in bindings.representatives}
-    role = "a Representative" if is_rep else "not a Representative"
-    reps = ", ".join(a.name for a in bindings.representatives)
-    rep_note = f"; the Representatives are {reps}" if reps else "; no agent is a Representative"
+    agent = bindings.agent.name
     folders = ", ".join(bindings.covered_folders)
     party = bindings.disclosing_party
     b = control.binding
@@ -432,22 +398,11 @@ def describe(control: Control, bindings: Bindings) -> str:
         "CONSTRAIN": "made to run inside the sandbox when it calls",
         "ALLOW": "explicitly allowed to call",
     }.get(decision, "blocked from calling")
-    if b.get("competitor"):
-        return (
-            f"Agent {agent} is {effect} its '{tool}' tool to {what} any document into the "
-            f"folder of {b['competitor']} ({b.get('folder')}), a competitor the NDA names. "
-            f"Filing elsewhere is unaffected."
-        )
     if what in ("read", "file"):
-        tail = (
-            " This permission is written down so it outranks the blocks on other agents."
-            if decision == "ALLOW"
-            else " Documents in other folders are allowed."
-        )
         return (
-            f"Agent {agent} ({role} under this NDA{rep_note}) is {effect} its "
+            f"Agent {agent}, which is not a party to this NDA, is {effect} its "
             f"'{tool}' tool to {what} any document whose '{b.get('arg')}' lies under the "
-            f"{party} folder {folders}.{tail}"
+            f"{party} folder {folders}. Documents in other folders are allowed."
         )
     if what == "send":
         return (
