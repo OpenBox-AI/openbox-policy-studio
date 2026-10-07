@@ -104,48 +104,26 @@ class Judge(Protocol):
 
     async def classify_tools(self, tools: list[ToolSpec]) -> dict[str, tuple[str, float]]: ...
 
-    async def decide(self, obligations: list[Obligation], decisions: list[str]) -> dict[str, str]: ...
-
     platform: dict[str, Any]
     existing: dict[str, list[dict[str, Any]]]
 
 
-DECISION_CRITERIA: dict[str, dict[str, str]] = {
-    "BLOCK": {
-        "what": "The clause forbids the action outright (shall not, may not, is prohibited) "
-        "and says nothing about the consequences of a breach.",
-        "not_for": "Clauses that allow the action with consent (REQUIRE_APPROVAL) or that "
-        "call a breach material or name injunctive relief or termination (HALT).",
-        "example": "shall not disclose Confidential Information to any third party",
-    },
-    "REQUIRE_APPROVAL": {
-        "what": "The clause allows the action only with the other party's consent, approval "
-        "or written permission, or on notice to them.",
-        "example": "may disclose to advisers only with the prior written consent of the "
-        "Disclosing Party",
-    },
-    "HALT": {
-        "what": "The clause forbids the action AND spells out severe consequences for a "
-        "breach of it: 'material breach', 'injunctive relief', 'immediate termination'. "
-        "Any attempt should stop the agent's run, not just the one call.",
-        "example": "any disclosure to a competitor constitutes a material breach entitling "
-        "the Disclosing Party to immediate injunctive relief",
-    },
-}
-
-_FAKE_DECISION_RULES: list[tuple[str, re.Pattern[str]]] = [
+# The decision a clause states outright. Checked on the clause text, not on a
+# model's reading of it, so the same clause always yields the same decision.
+_WORDING_RULES: list[tuple[str, re.Pattern[str]]] = [
     ("REQUIRE_APPROVAL", re.compile(r"prior written consent|with the consent|approval of|permission", re.I)),
     ("HALT", re.compile(r"material breach|injunctive|immediate(ly)? terminat", re.I)),
 ]
 
 
+def decision_from_wording(text: str) -> str | None:
+    """The decision the clause states outright, or None when it only forbids."""
+
+    return next((d for d, p in _WORDING_RULES if p.search(text)), None)
+
+
 def fake_decisions(obligations: list[Obligation]) -> dict[str, str]:
-    out = {}
-    for o in obligations:
-        out[o.clause_id] = next(
-            (d for d, p in _FAKE_DECISION_RULES if p.search(o.source_quote)), "BLOCK"
-        )
-    return out
+    return {o.clause_id: decision_from_wording(o.source_quote) or "BLOCK" for o in obligations}
 
 
 class FakeJudge:
@@ -160,8 +138,6 @@ class FakeJudge:
     async def classify_tools(self, tools: list[ToolSpec]) -> dict[str, tuple[str, float]]:
         return fake_roles(tools)
 
-    async def decide(self, obligations: list[Obligation], decisions: list[str]) -> dict[str, str]:
-        return fake_decisions(obligations)
 
     async def classify(self, nda_text: str, clauses: list[Clause]) -> list[Classification]:
         out = []
@@ -188,34 +164,6 @@ class TypeSafeJudge:
         # platform_context; set by Services so every question carries it.
         self.platform: dict[str, Any] = {}
         self.existing: dict[str, list[dict[str, Any]]] = {}
-
-    async def decide(self, obligations: list[Obligation], decisions: list[str]) -> dict[str, str]:
-        """Which platform decision each clause calls for, from its own wording."""
-
-        from typesafe_sdk import Choice
-
-        if not obligations:
-            return {}
-        criteria = {d: DECISION_CRITERIA[d] for d in decisions if d in DECISION_CRITERIA}
-        questions = {
-            f"clause_{i}": Choice(
-                instructions={
-                    "what": f"Which decision should OpenBox apply when the agent attempts "
-                    f"what clause {o.clause_id} restricts?",
-                    "clause": o.source_quote,
-                },
-                criteria=criteria,
-            )
-            for i, o in enumerate(obligations)
-        }
-        result = await self._client.system_one(
-            {"platform_decisions": self.platform.get("decisions", {})},
-            questions,
-            model=self.model,
-        )
-        return {
-            o.clause_id: result.choices[f"clause_{i}"].choice for i, o in enumerate(obligations)
-        }
 
     async def classify_tools(self, tools: list[ToolSpec]) -> dict[str, tuple[str, float]]:
         """One choice per tool: what does calling it do with the material?

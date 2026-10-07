@@ -84,12 +84,17 @@ class Bindings(BaseModel):
         graph = self.graphs.get(agent.id)
         if graph is None:
             return ToolMap(
-                read=[ToolSpec(name=n, args={"document_id": "string"}) for n in self.read_tools],
+                read=[
+                    ToolSpec(name=n, args={"document_id": "string"}, role="reads_material")
+                    for n in self.read_tools
+                ],
                 file=[
-                    ToolSpec(name=n, args={"destination_document_id": "string"})
+                    ToolSpec(
+                        name=n, args={"destination_document_id": "string"}, role="files_to_store"
+                    )
                     for n in self.file_tools
                 ],
-                outbound=[ToolSpec(name=n) for n in self.outbound_tools],
+                outbound=[ToolSpec(name=n, role="sends_outbound") for n in self.outbound_tools],
             )
         return ToolMap(
             read=graph.with_role("reads_material"),

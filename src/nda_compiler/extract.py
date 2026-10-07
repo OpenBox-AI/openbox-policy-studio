@@ -14,7 +14,7 @@ import asyncio
 import json
 import os
 import re
-from typing import Protocol
+from typing import Any, Protocol
 
 from .models import Clause, ControlKind, Obligation
 
@@ -58,6 +58,13 @@ def _squash(value: str) -> str:
 
     curly = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
     return re.sub(r"\s+", "", value).translate(curly).lower()
+
+
+def in_clause(values: list[str], clause: Clause) -> list[str]:
+    """Only the values that appear in this clause's own text."""
+
+    haystack = _squash(f"{clause.heading}. {clause.text}")
+    return [v for v in values if _squash(v) in haystack]
 
 
 def _grounded(obligation: Obligation, nda_text: str) -> Obligation:
@@ -116,8 +123,14 @@ class OpenAIExtractor:
         self.model = model
 
     async def extract(self, clause: Clause, kind: ControlKind, definitions: str) -> Obligation:
-        # gpt-5 models reason by default; extraction is a copy task, so turn it off.
-        extra = {"reasoning_effort": "minimal"} if self.model.startswith("gpt-5") else {}
+        # Same clause, same extraction: a fixed seed keeps sampling as
+        # deterministic as the API allows. gpt-5 models reason by default;
+        # extraction is a copy task, so reasoning is turned down.
+        extra: dict[str, Any] = {"seed": 7}
+        if self.model.startswith("gpt-5"):
+            extra["reasoning_effort"] = "minimal"
+        else:
+            extra["temperature"] = 0
         response = await self._client.chat.completions.create(
             model=self.model,
             **extra,

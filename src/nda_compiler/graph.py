@@ -26,8 +26,8 @@ from langgraph.graph import END, START, StateGraph
 from . import pdf
 from .agent_graph import AgentGraph, observe, with_roles
 from .bindings import Bindings
-from .extract import Extractor, extract_all
-from .jev import Judge, verify_all
+from .extract import Extractor, extract_all, in_clause
+from .jev import Judge, decision_from_wording, verify_all
 from .models import (
     ENFORCEABLE_KINDS,
     Classification,
@@ -39,7 +39,7 @@ from .models import (
 )
 from .openbox_api import OpenBoxBackend, apply_all
 from .platform_context import PlatformContext, load_context
-from .templates import build_controls, describe, not_applicable, summarize
+from .templates import TEMPLATES, build_controls, describe, not_applicable, summarize
 
 EventSource = Callable[[str], Awaitable[list[dict[str, Any]]]]
 
@@ -146,14 +146,35 @@ def build_graph(services: Services):
         obligations = await extract_all(
             services.extractor, items, state["definitions"], state["nda_text"]
         )
-        review = [
-            f"§{o.clause_id}: ungrounded values {o.ungrounded}" for o in obligations if o.ungrounded
-        ]
-        # Which platform decision each clause calls for, from its wording.
-        grounded = [o for o in obligations if not o.ungrounded]
-        decisions = await services.judge.decide(grounded, services.platform.decisions)
+        # Recipients must come from the clause itself, not from elsewhere in
+        # the NDA: a competitor clause that borrows "Representatives" from §2
+        # would otherwise also produce §2's folder rules.
         obligations = [
-            o.model_copy(update={"decision": decisions.get(o.clause_id, "BLOCK")})
+            o.model_copy(
+                update={
+                    "permitted_recipients": in_clause(o.permitted_recipients, by_id[o.clause_id]),
+                    "prohibited_recipients": in_clause(o.prohibited_recipients, by_id[o.clause_id]),
+                }
+            )
+            for o in obligations
+        ]
+        # A paraphrase only matters where it would have shaped a rule; clauses
+        # with no template are reported as not applicable regardless.
+        review = [
+            f"§{o.clause_id}: ungrounded values {o.ungrounded}"
+            for o in obligations
+            if o.ungrounded and o.kind in TEMPLATES
+        ]
+        # Which platform decision each clause calls for comes from its literal
+        # wording: "prior written consent" -> REQUIRE_APPROVAL, "material
+        # breach" / "injunctive relief" -> HALT, otherwise the prohibition is
+        # a BLOCK. Deterministic on purpose: the same clause must always give
+        # the same rule, and a model asked to choose between BLOCK and HALT on
+        # a clause that says neither answered differently run to run.
+        obligations = [
+            o.model_copy(
+                update={"decision": decision_from_wording(by_id[o.clause_id].text) or "BLOCK"}
+            )
             for o in obligations
         ]
         return _timed("extract", state, started, {"obligations": obligations, "review": review})
