@@ -84,12 +84,13 @@ class HttpBackend:
 
     async def _policy_rule(self, control: Control) -> Control:
         base = f"/agent/{control.agent_id}/policy-rule"
-        created = (await self._post(base, control.payload)).json()
+        await self._retire_same_name(base, control.payload["rule_name"])
+        created = _unwrap((await self._post(base, control.payload)).json())
         version_id = created.get("id") or created.get("rule_version_id")
         for test in control.tests:
-            result = (
-                await self._post(f"{base}/{version_id}/evaluate", {"input": test.input})
-            ).json()
+            result = _unwrap(
+                (await self._post(f"{base}/{version_id}/evaluate", {"input": test.input})).json()
+            )
             decision = _decision(result)
             if decision != test.expect:
                 return control.model_copy(
@@ -102,10 +103,22 @@ class HttpBackend:
         await self._client.put(f"{base}/{version_id}/status", json={"is_active": True})
         return control.model_copy(update={"status": "active", "remote_id": version_id})
 
+    async def _retire_same_name(self, base: str, rule_name: str) -> None:
+        """Re-compiling an NDA replaces its rules instead of stacking duplicates."""
+
+        response = await self._client.get(base, params={"limit": 200})
+        if response.status_code >= 300:
+            return
+        page = _unwrap(response.json())
+        rules = page.get("data", page) if isinstance(page, dict) else page
+        for rule in rules or []:
+            if rule.get("rule_name") == rule_name and rule.get("is_current_version", True):
+                await self._client.delete(f"{base}/{rule['id']}")
+
     async def _behavior_rule(self, control: Control) -> Control:
-        created = (
-            await self._post(f"/agent/{control.agent_id}/behavior-rule", control.payload)
-        ).json()
+        created = _unwrap(
+            (await self._post(f"/agent/{control.agent_id}/behavior-rule", control.payload)).json()
+        )
         return control.model_copy(update={"status": "active", "remote_id": created.get("id")})
 
     async def _guardrail(self, control: Control) -> Control:
@@ -122,7 +135,7 @@ class HttpBackend:
                     },
                 )
             ).json()
-            blocked = _guardrail_blocked(result)
+            blocked = _guardrail_blocked(_unwrap(result))
             if blocked != (test.expect == "BLOCK"):
                 return control.model_copy(
                     update={
@@ -130,13 +143,21 @@ class HttpBackend:
                         "note": f"test '{test.label}' did not {test.expect}",
                     }
                 )
-        created = (await self._post(f"/agent/{control.agent_id}/guardrails", p)).json()
+        created = _unwrap((await self._post(f"/agent/{control.agent_id}/guardrails", p)).json())
         return control.model_copy(update={"status": "active", "remote_id": created.get("id")})
 
     async def _post(self, path: str, body: dict[str, Any]) -> httpx.Response:
         response = await self._client.post(path, json=body)
         response.raise_for_status()
         return response
+
+
+def _unwrap(body: Any) -> Any:
+    """The backend wraps every response as {status, data}."""
+
+    if isinstance(body, dict) and "data" in body and "status" in body:
+        return body["data"]
+    return body
 
 
 def _decision(result: Any) -> str:
