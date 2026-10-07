@@ -63,8 +63,8 @@ select.input{appearance:none;-webkit-appearance:none;height:40px;min-width:260px
 .metric span{color:var(--muted-fg)}
 
 /* ── agent graph card ── */
-#graphcard{margin-bottom:24px;min-height:196px}
-.plat{padding:10px 20px 0;font-size:12px;color:var(--muted-fg);min-height:28px}
+#graphcard{margin-bottom:24px;min-height:74px}
+#graphcard .card-head{border-bottom:0}
 #g-src{min-width:150px;justify-content:center}
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border)}
 .card-head h2{margin:0;font-size:15px;font-weight:600;color:var(--heading)}
@@ -253,8 +253,6 @@ tr.held .cb{visibility:hidden}
       <div><h2 id="g-name">Agent graph</h2><p id="g-sum">Reading the agent's compiled graph…</p></div>
       <span class="badge na" id="g-src">…</span>
     </div>
-    <div class="plat" id="g-plat">Reading the platform catalog…</div>
-    <div class="chain" id="chain"><span class="skeleton"></span><span class="skeleton" style="width:90px"></span><span class="skeleton" style="width:140px"></span><span class="skeleton" style="width:110px"></span><span class="skeleton" style="width:100px"></span><span class="skeleton" style="width:130px"></span><span class="skeleton" style="width:120px"></span><span class="skeleton" style="width:100px;margin-top:6px"></span><span class="skeleton" style="width:140px;margin-top:6px"></span></div>
   </section>
 
   <div class="cols">
@@ -340,24 +338,16 @@ function resize(){const w=canvas.clientWidth||1,h=canvas.clientHeight||1,pr=rend
 const ROLE={reads_material:'reads',searches_index:'searches',writes_internal:'drafts',files_to_store:'files',sends_outbound:'sends out',other:''};
 let GRAPHS=[];
 function renderGraph(gs){
-  GRAPHS=gs; const g=gs[0]; const chain=$('chain'); chain.innerHTML='';
-  if(!g){$('g-name').textContent='Agent graph';$('g-sum').textContent='No graph exported for this matter\'s agent. Policies fall back to the names in the bindings file.';$('g-src').textContent='not exported';return;}
-  const byNode={}; g.tools.forEach(t=>{if(t.node)byNode[t.node]=t;});
-  const edges=new Map(g.edges.map(e=>[e.source+'>'+e.target,e.conditional]));
-  g.order.forEach((n,i)=>{
-    if(i){const a=document.createElement('span');a.className='arrow'+(edges.get(g.order[i-1]+'>'+n)===true?' cond':'');chain.appendChild(a);}
-    const t=byNode[n], el=document.createElement('span'); el.className='node'+(t?' tool':''); el.dataset.tool=t?t.name:'';
-    el.innerHTML=t?`<span>${t.name}</span>${ROLE[t.role]?`<span class="role">${ROLE[t.role]}</span>`:''}${t.observed?`<span class="n" title="calls recorded on OpenBox">×${t.observed}</span>`:''}`:n;
-    if(t)el.title=`${t.name}(${Object.keys(t.args).join(', ')})\n${t.description}${t.document_arg?`\npath argument: ${t.document_arg}`:''}\ninput shape: ${t.input_shape||'list (SDK convention)'}`;
-    chain.appendChild(el);
-  });
-  const seen=g.tools.reduce((s,t)=>s+t.observed,0);
-  $('g-name').textContent=`${g.name} · ${g.tools.length} tools, ${g.nodes.length-2} nodes`;
-  $('g-sum').textContent='Roles judged from each tool\'s name, description and arguments. Highlighted tools are the ones the proposed policies bind to.';
-  const src=$('g-src'); src.textContent=g.sources.includes('observed')?`${seen} live calls folded in`:'compiled graph only'; src.className='badge '+(g.sources.includes('observed')?'active':'na');
+  GRAPHS=gs;
+  if(!gs.length){$('g-name').textContent='No agent graph compiled';$('g-sum').textContent='Policies fall back to the tool names in the bindings file.';$('g-src').textContent='not exported';$('g-src').className='badge na';return;}
+  const tools=gs.reduce((n,g)=>n+g.tools.length,0), nodes=gs.reduce((n,g)=>n+Math.max(0,g.nodes.length-2),0), seen=gs.reduce((n,g)=>n+g.tools.reduce((s,t)=>s+t.observed,0),0);
+  $('g-name').textContent=`${gs.length} agent graph${gs.length>1?'s':''} compiled · ${tools} tools · ${nodes} nodes`;
+  $('g-sum').textContent=gs.map(g=>`${g.name}: ${g.tools.map(t=>t.name).join(', ')}`).join(' · ');
+  const live=gs.some(g=>g.sources.includes('observed'));
+  $('g-src').textContent=live?`${seen} live calls folded in`:'compiled graph only'; $('g-src').className='badge '+(live?'active':'na');
 }
-function markBound(controls){document.querySelectorAll('.node.tool').forEach(el=>el.classList.toggle('bound',controls.some(c=>c.binding&&(c.binding.tool===el.dataset.tool||(c.binding.tools||[]).includes(el.dataset.tool)))));}
-function renderPlatform(pf){if(!pf)return;const ex=Object.values(pf.existing_rules||{}).reduce((a,b)=>a+b,0);$('g-plat').textContent=`Platform catalog held locally: ${pf.fields} input fields, ${pf.operators.length} operators, ${pf.decisions.length} decisions, ${pf.span_types} span types · ${ex} rule${ex===1?'':'s'} already on the agent`;}
+function markBound(){}
+function renderPlatform(){}
 fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([]));
 
 /* ── upload ── */
