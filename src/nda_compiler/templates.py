@@ -288,19 +288,17 @@ def describe(control: Control, bindings: Bindings) -> str:
 
     names = {a.id: a.name for a in bindings.all_agents}
     agent = names.get(control.agent_id, control.agent_id)
-    reps = ", ".join(a.name for a in bindings.representatives) or "none"
-    role = (
-        "a Representative"
-        if control.agent_id in {a.id for a in bindings.representatives}
-        else "not a Representative"
-    )
+    is_rep = control.agent_id in {a.id for a in bindings.representatives}
+    role = "a Representative" if is_rep else "not a Representative"
+    reps = ", ".join(a.name for a in bindings.representatives)
+    rep_note = f"; the Representatives are {reps}" if reps else "; no agent is a Representative"
     folders = ", ".join(bindings.covered_folders)
     party = bindings.disclosing_party
     p = control.payload
     if control.type == "policy_rule":
         tool = p["conditions"][0]["right"]["value"]
         return (
-            f"Agent {agent} ({role} under this NDA; the Representatives are {reps}) is blocked "
+            f"Agent {agent} ({role} under this NDA{rep_note}) is blocked "
             f"from calling the tool '{tool}' on any document stored under the {party} folder "
             f"{folders}. Attempts on documents in other folders are allowed."
         )

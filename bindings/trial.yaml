@@ -1,0 +1,18 @@
+# Single-agent trial: every proposed policy targets the one compliance agent.
+# The agent is treated as NOT a Representative of the Disclosing Party, so the
+# NDA's access limits apply to it.
+matter: trial
+disclosing_party: The Coca-Cola Company
+disclosing_party_aliases: [Coca-Cola, Coca Cola]
+receiving_party: Sellist Advisory LLP
+codenames: [Project Fizz]
+purpose: evaluating integration risk for the proposed transaction between the parties
+covered_folders:
+  - 0001/10001/
+representatives: []
+other_agents:
+  - id: 16e4c8e5-0921-4946-ae5b-96fe1966e57d
+    name: compliance agent
+read_tools: [read_document]
+file_tools: [upload_document]
+outbound_tools: [send_email, http_post]

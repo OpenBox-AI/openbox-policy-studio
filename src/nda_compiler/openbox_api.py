@@ -124,18 +124,36 @@ class HttpBackend:
     async def _guardrail(self, control: Control) -> Control:
         p = control.payload
         for test in control.tests:
-            result = (
-                await self._post(
-                    "/guardrails/run-test",
-                    {
-                        "guardrail_type": p["guardrail_type"],
-                        "params": p["params"],
-                        "settings": p["settings"],
-                        "logs": [test.input["text"]],
+            # The guardrails service scans `output.*` for ActivityCompleted logs.
+            response = await self._client.post(
+                "/guardrails/run-test",
+                json={
+                    "guardrail_type": p["guardrail_type"],
+                    "params": p["params"],
+                    "settings": p["settings"],
+                    "logs": {
+                        "event_type": "ActivityCompleted",
+                        "output": {"text": test.input["text"]},
                     },
+                },
+            )
+            if response.status_code >= 300:
+                # Guardrails run in a separate service; without it nothing can be
+                # proven, and a guardrail attached to an agent fails closed at runtime.
+                return control.model_copy(
+                    update={
+                        "status": "failed",
+                        "note": f"guardrails service unavailable ({response.status_code}); "
+                        "not applied",
+                    }
                 )
-            ).json()
-            blocked = _guardrail_blocked(_unwrap(result))
+            result = _unwrap(response.json())
+            if not isinstance(result, dict) or result.get("success") is False:
+                detail = result.get("detail", "") if isinstance(result, dict) else ""
+                return control.model_copy(
+                    update={"status": "failed", "note": f"guardrail test failed: {detail[:160]}"}
+                )
+            blocked = bool(result.get("violations_detected"))
             if blocked != (test.expect == "BLOCK"):
                 return control.model_copy(
                     update={
@@ -169,16 +187,6 @@ def _decision(result: Any) -> str:
             if isinstance(value, dict):
                 return _decision(value)
     return "ALLOW"
-
-
-def _guardrail_blocked(result: Any) -> bool:
-    if not isinstance(result, dict):
-        return False
-    for key in ("blocked", "failed", "violation"):
-        if result.get(key) is True:
-            return True
-    status = str(result.get("status") or result.get("verdict") or "").lower()
-    return status in {"block", "blocked", "fail", "failed"}
 
 
 def backend_from_env() -> OpenBoxBackend:
