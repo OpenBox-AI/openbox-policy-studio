@@ -332,7 +332,8 @@ $('apply').addEventListener('click', async () => {
   cards = cards.filter(c => !c.dataset.gone); updateCount();
   if (!cards.length) $('applybar').classList.remove('show');
   // OPA picks the bundle up on its next poll; re-read state a few times
-  [1500, 10000, 25000, 40000].forEach(ms => setTimeout(loadState, ms));
+  await loadState();
+  [10000, 25000, 40000].forEach(ms => setTimeout(loadState, ms));
 });
 function setEntry(e, status, note){ e.className = 'entry '+status; e.querySelector('.s').textContent = status==='active' ? 'active on OpenBox' : status==='failed' ? 'not applied' : status;
   if (note){ const n = document.createElement('div'); n.className='note'; n.textContent = note; e.appendChild(n); } }
