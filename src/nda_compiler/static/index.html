@@ -5,347 +5,321 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NDA Policies</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#141A33; --ink-2:#1C2342; --paper:#F6F1E7; --paper-2:#EDE6D8; --graphite:#5B6377; --mist:#AEB4C6;
-  --teal:#2FA39A; --teal-2:#1E7F78; --seal:#B8322F; --seal-2:#8E2522; --amber:#C7892E;
-  --sans:"Public Sans",system-ui,sans-serif; --serif:"Source Serif 4",Georgia,serif;
-  --side:360px;
+  --bg:#0F1420; --panel:#141A26; --panel-2:#1A2130; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --text:#E6E9EF; --muted:#8B93A7; --faint:#5C657A;
+  --accent:#6366F1; --accent-2:#4F51D6; --ok:#2DD4A0; --warn:#E0A83A; --bad:#F0616D;
+  --side:380px; --bar:56px; --r:10px;
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--ink);color:var(--paper);font:15px/1.5 var(--sans);overflow:hidden}
-#scene{position:fixed;top:0;left:0;width:calc(100vw - var(--side));height:100vh;display:block;z-index:0}
-#stage{position:fixed;inset:0 var(--side) 0 0;z-index:1;overflow:hidden}
-button{font:inherit;cursor:pointer;border:0;border-radius:4px}
-button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;cursor:pointer;border:0;border-radius:8px}
+button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#scene{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;z-index:0;opacity:.9}
 
-/* header */
-#head{position:absolute;left:32px;top:28px;max-width:520px;pointer-events:none}
-#head h1{font:600 30px/1.1 var(--serif);margin:0 0 6px;letter-spacing:-.01em}
-#head p{margin:0;color:var(--mist);max-width:46ch}
-#head .agent{display:inline-block;margin-top:10px;padding:3px 10px;border:1px solid rgba(246,241,231,.25);border-radius:999px;font-size:13px;color:var(--paper)}
+/* top bar */
+#bar{position:fixed;top:0;left:0;right:0;height:var(--bar);z-index:3;display:flex;align-items:center;gap:20px;padding:0 20px;background:rgba(15,20,32,.75);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+#bar .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em}
+#bar .brand i{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#22D3EE);display:inline-block}
+#bar .sep{width:1px;height:20px;background:var(--line-2)}
+#bar .crumb{color:var(--muted)}
+#bar .crumb b{color:var(--text);font-weight:500}
+#bar .right{margin-left:auto;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;box-shadow:0 0 0 3px rgba(45,212,160,.15)}
+.dot.off{background:var(--bad);box-shadow:0 0 0 3px rgba(240,97,109,.15)}
+.chip{border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--text)}
 
-/* drop target over the 3D sheet */
-#drop{position:absolute;left:50%;top:50%;width:300px;height:400px;transform:translate(-50%,-50%);display:grid;place-items:center;text-align:center;cursor:pointer;border-radius:6px;transition:box-shadow .3s}
-#drop.over{box-shadow:0 0 0 2px var(--amber),0 0 60px rgba(199,137,46,.35)}
-#drop .hint{background:rgba(20,26,51,.72);backdrop-filter:blur(6px);padding:14px 18px;border-radius:6px;max-width:240px;color:var(--paper)}
-#drop .hint b{display:block;font:600 17px/1.2 var(--serif);margin-bottom:4px}
-#drop .hint span{color:var(--mist);font-size:13px}
+/* layout */
+#main{position:fixed;top:var(--bar);left:0;right:var(--side);bottom:0;z-index:1;overflow:auto;padding:28px 32px 110px}
+#side{position:fixed;top:var(--bar);right:0;bottom:0;width:var(--side);z-index:2;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column}
+
+/* page head */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px}
+.head h1{font-size:20px;font-weight:600;letter-spacing:-.015em;margin:0 0 4px}
+.head p{margin:0;color:var(--muted);max-width:60ch}
+.stats{display:flex;gap:10px}
+.stats[hidden]{display:none}
+.stat{border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-width:116px;background:rgba(20,26,38,.6)}
+.stat b{display:block;font-size:18px;font-weight:600;letter-spacing:-.02em}
+.stat span{color:var(--muted);font-size:12px}
+
+/* dropzone */
+#drop{border:1px dashed var(--line-2);border-radius:14px;min-height:340px;display:grid;place-items:center;text-align:center;background:rgba(20,26,38,.45);transition:border-color .2s,background .2s;cursor:pointer}
+#drop.over{border-color:var(--accent);background:rgba(99,102,241,.08)}
+#drop[hidden]{display:none}
+#drop .in{max-width:380px}
+#drop .ico{width:44px;height:44px;border-radius:12px;margin:0 auto 14px;background:var(--panel-2);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--muted)}
+#drop h2{font-size:16px;font-weight:600;margin:0 0 6px}
+#drop p{margin:0 0 16px;color:var(--muted)}
+#drop button{background:var(--accent);color:#fff;padding:9px 14px;font-weight:500}
+#drop small{display:block;margin-top:10px;color:var(--faint);font-size:12px}
 #drop input{display:none}
 
-/* stage progress */
-#progress{position:absolute;left:50%;bottom:48px;transform:translateX(-50%);display:flex;gap:28px;opacity:0;transition:opacity .3s;pointer-events:none}
-#progress div{color:var(--mist);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px}
-#progress i{width:8px;height:8px;border-radius:50%;background:rgba(246,241,231,.25);display:block;transition:background .3s,transform .3s}
-#progress div.on i{background:var(--amber);transform:scale(1.3)}
-#progress div.done i{background:var(--teal)}
-#progress em{font-style:normal;color:var(--paper)}
+/* stages */
+#stages{display:none;gap:8px;margin:0 0 20px}
+#stages.show{display:flex}
+.stage{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:rgba(20,26,38,.6);display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.stage i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line-2);display:inline-block;flex:none}
+.stage.on i{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.stage.done{color:var(--text)}.stage.done i{border-color:var(--ok);background:var(--ok)}
+.stage em{font-style:normal;color:var(--faint);font-variant-numeric:tabular-nums;margin-left:auto;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* cards */
-.card{position:absolute;width:280px;background:var(--paper);color:var(--ink);border-radius:5px;padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.4) inset;cursor:pointer;will-change:transform;transform-origin:center;transition:box-shadow .25s}
-.card:hover{box-shadow:0 26px 70px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.4) inset}
-.card.sel{box-shadow:0 0 0 3px var(--teal),0 26px 70px rgba(0,0,0,.55)}
-.card.held{background:var(--paper-2);color:var(--graphite);cursor:default}
-.card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
-.card .clause{font:600 13px/1.2 var(--serif);color:var(--graphite)}
-.card .kind{font-size:12px;color:var(--graphite);border:1px solid rgba(20,26,51,.2);border-radius:999px;padding:1px 8px;white-space:nowrap}
-.card .rule{font:500 14px/1.4 var(--sans);margin:0 0 10px}
-.card q{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font:italic 400 13px/1.45 var(--serif);color:var(--graphite);quotes:"“" "”";border-left:2px solid rgba(20,26,51,.18);padding-left:10px;margin:0 0 10px}
-.card.sel q,.card:hover q{-webkit-line-clamp:unset}
-.card .foot{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--graphite)}
-.ring{--p:0;width:28px;height:28px;border-radius:50%;background:conic-gradient(var(--teal) calc(var(--p)*1%),rgba(20,26,51,.12) 0);display:grid;place-items:center;font-size:10px;font-weight:600;color:var(--ink)}
-.ring::after{content:attr(data-v);background:var(--paper);border-radius:50%;width:21px;height:21px;display:grid;place-items:center}
-.card.held .ring{background:conic-gradient(var(--amber) calc(var(--p)*1%),rgba(20,26,51,.12) 0)}
-.card .tick{width:18px;height:18px;border:1.5px solid rgba(20,26,51,.35);border-radius:4px;display:grid;place-items:center}
-.card.sel .tick{background:var(--teal);border-color:var(--teal);color:#fff}
-.card .why{font-size:12px;color:var(--amber);margin-top:6px}
+/* policy grid */
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:border-color .15s,transform .15s,background .15s;opacity:0;transform:translateY(8px)}
+.card.in{opacity:1;transform:none;transition:opacity .35s ease,transform .35s ease,border-color .15s}
+.card:hover{border-color:var(--line-2)}
+.card.sel{border-color:var(--accent);background:rgba(99,102,241,.07)}
+.card.held{opacity:.75;cursor:default}
+.card .top{display:flex;align-items:center;gap:8px}
+.badge{font-size:11px;font-weight:500;letter-spacing:.01em;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap}
+.badge.access{color:#A5B4FC;border-color:rgba(165,180,252,.35)}.badge.sequence{color:#67E8F9;border-color:rgba(103,232,249,.35)}
+.badge.scan{color:#FDBA74;border-color:rgba(253,186,116,.35)}.badge.judge{color:#C4B5FD;border-color:rgba(196,181,253,.35)}.badge.held{color:var(--warn);border-color:rgba(224,168,58,.4)}
+.card .sec{color:var(--muted);font-size:12px;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .rule{margin:0;font-size:14px;line-height:1.5}
+.card .quote{margin:0;color:var(--muted);font-size:13px;line-height:1.5;border-left:2px solid var(--line-2);padding-left:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card.sel .quote,.card:hover .quote{-webkit-line-clamp:unset}
+.card .foot{display:flex;align-items:center;gap:10px;margin-top:auto;font-size:12px;color:var(--muted)}
+.meter{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);width:var(--p)}
+.card.held .meter i{background:var(--warn)}
+.cb{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:12px;color:#fff;flex:none}
+.card.sel .cb{background:var(--accent);border-color:var(--accent)}
+.note{color:var(--warn);font-size:12px}
 
-/* ghosts: clauses outside runtime scope */
-#ghosts{position:absolute;left:32px;bottom:36px;display:flex;flex-wrap:wrap;gap:8px;max-width:520px;opacity:0;transition:opacity .4s}
-#ghosts span{border:1px dashed rgba(246,241,231,.3);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--mist)}
-#ghosts .lab{color:var(--mist);font-size:12px;width:100%;margin-bottom:-2px}
+/* out of scope */
+#scope{margin-top:22px;color:var(--muted);font-size:13px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
+#scope.show{display:flex}
+#scope .chip{color:var(--muted)}
 
-/* apply */
-#applybar{position:absolute;right:28px;bottom:36px;display:flex;align-items:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .3s}
-#applybar.show{opacity:1;pointer-events:auto}
-#apply{background:var(--seal);color:#fff;padding:12px 18px;font-weight:600;border-radius:999px;box-shadow:0 10px 30px rgba(184,50,47,.45)}
-#apply:hover{background:var(--seal-2)}
-#apply[disabled]{opacity:.5;cursor:default}
-#applybar small{color:var(--mist)}
+/* action bar */
+#act{position:fixed;left:32px;right:calc(var(--side) + 32px);bottom:24px;z-index:3;display:none;align-items:center;gap:14px;background:rgba(26,33,48,.9);backdrop-filter:blur(12px);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px 12px 18px}
+#act.show{display:flex}
+#act .n{font-weight:500}
+#act .sub{color:var(--muted);font-size:13px}
+#act .spacer{flex:1}
+#act .ghost{background:transparent;color:var(--muted);padding:9px 12px}
+#act .ghost:hover{color:var(--text)}
+#apply{background:var(--accent);color:#fff;padding:10px 16px;font-weight:500}
+#apply:hover{background:var(--accent-2)}
+#apply[disabled]{opacity:.45;cursor:default}
 
-/* sidebar: the ledger */
-#side{position:fixed;top:0;right:0;bottom:0;width:var(--side);z-index:2;background:var(--ink-2);border-left:1px solid rgba(246,241,231,.08);display:flex;flex-direction:column}
-#side header{padding:28px 24px 14px}
-#side h2{font:600 18px/1.2 var(--serif);margin:0 0 4px}
-#side header p{margin:0;color:var(--mist);font-size:13px}
-#side .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mist);margin-top:8px}
-#side .live i{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;box-shadow:0 0 8px var(--teal)}
-#ledger{flex:1;overflow:auto;padding:0 16px 24px;display:flex;flex-direction:column;gap:10px}
-#ledger .empty{color:var(--mist);font-size:13px;padding:12px 8px;border:1px dashed rgba(246,241,231,.15);border-radius:6px}
-.entry{background:rgba(246,241,231,.06);border:1px solid rgba(246,241,231,.1);border-radius:6px;padding:12px 14px;position:relative}
-.entry .t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.entry .name{font-weight:500;font-size:14px}
-.entry .clause{font:600 12px var(--serif);color:var(--mist)}
-.entry .st{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--mist)}
-.entry .st i{width:8px;height:8px;border-radius:50%;background:var(--mist);display:inline-block;flex:none}
-.entry.applying .st i{background:var(--amber);animation:pulse 1s infinite}
-.entry.active .st i{background:var(--teal)}
-.entry.failed .st i{background:var(--seal)}
-.entry .opa{margin-left:auto;font-size:11px;color:var(--mist)}
-.entry.active.opa .opa{color:var(--teal)}
-.entry .note{font-size:12px;color:var(--mist);margin-top:4px}
-@keyframes pulse{50%{opacity:.4}}
+/* side panel */
+#side header{padding:20px 20px 12px;border-bottom:1px solid var(--line)}
+#side h2{font-size:14px;font-weight:600;margin:0 0 2px}
+#side header p{margin:0;color:var(--muted);font-size:12px}
+#side .sync{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--muted)}
+#side .sync button{margin-left:auto;background:transparent;color:var(--muted);padding:4px 8px;font-size:12px;border:1px solid var(--line)}
+#ledger{flex:1;overflow:auto;padding:12px 12px 20px;display:flex;flex-direction:column;gap:8px}
+.empty{color:var(--muted);font-size:13px;padding:24px 12px;text-align:center;border:1px dashed var(--line);border-radius:var(--r)}
+.row{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:rgba(255,255,255,.02)}
+.row .t{display:flex;gap:8px;align-items:center}
+.row .name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .st{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:var(--muted)}
+.row .st .dot{box-shadow:none}
+.row.applying .dot{background:var(--warn);animation:pulse 1s infinite}
+.row.active .dot{background:var(--ok)}.row.failed .dot{background:var(--bad)}
+.row .opa{margin-left:auto;font-size:11px;color:var(--faint)}
+.row.opa .opa{color:var(--ok)}
+.row .why{font-size:12px;color:var(--muted);margin-top:4px}
+@keyframes pulse{50%{opacity:.35}}
 
-/* the flying copy */
-.fly{position:fixed;z-index:5;pointer-events:none;background:var(--paper);border-radius:5px;transition:all .75s cubic-bezier(.2,.8,.2,1)}
-
+/* flying ghost */
+.fly{position:fixed;z-index:6;pointer-events:none;border-radius:10px;background:rgba(99,102,241,.25);border:1px solid var(--accent);transition:all .6s cubic-bezier(.2,.8,.2,1)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation:none!important}}
-@media (max-width:900px){:root{--side:0px}#side{display:none}#head h1{font-size:24px}}
+@media (max-width:980px){:root{--side:0px}#side{display:none}}
 </style>
 </head>
 <body>
 <canvas id="scene"></canvas>
-<div id="stage">
-  <div id="head">
-    <h1>Read the NDA. Choose what to enforce.</h1>
-    <p>Drop the agreement onto the sheet. Each clause that can bind an agent becomes a card. Tick the ones you want, then seal them onto OpenBox.</p>
-    <span class="agent" id="agentname">compliance agent</span>
+
+<div id="bar">
+  <div class="brand"><i></i>OpenBox Policy Studio</div>
+  <span class="sep"></span>
+  <span class="crumb">Matter <b id="matter">trial</b></span>
+  <span class="chip" id="agentname">compliance agent</span>
+  <div class="right"><span class="dot" id="livedot"></span><span id="livetxt">connecting…</span></div>
+</div>
+
+<main id="main">
+  <div class="head">
+    <div>
+      <h1>Policies from the NDA</h1>
+      <p>Upload the agreement. Each clause an agent can be held to becomes a policy you can review and apply.</p>
+    </div>
+    <div class="stats" id="stats" hidden>
+      <div class="stat"><b id="s-clauses">–</b><span>clauses read</span></div>
+      <div class="stat"><b id="s-policies">–</b><span>policies available</span></div>
+      <div class="stat"><b id="s-time">–</b><span>end to end</span></div>
+    </div>
   </div>
+
+  <div id="stages">
+    <div class="stage" data-s="parse"><span>Parse</span><em></em><i></i></div>
+    <div class="stage" data-s="classify"><span>Classify</span><em></em><i></i></div>
+    <div class="stage" data-s="extract"><span>Extract</span><em></em><i></i></div>
+    <div class="stage" data-s="verify"><span>Verify</span><em></em><i></i></div>
+  </div>
+
   <label id="drop" tabindex="0">
-    <div class="hint"><b>Drop the NDA here</b><span>PDF, Word or Markdown · or click to choose</span></div>
+    <div class="in">
+      <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></div>
+      <h2>Upload an NDA</h2>
+      <p>PDF, Word or Markdown. Nothing is applied until you choose to.</p>
+      <button type="button" id="pick">Choose file</button>
+      <small>or drag it here</small>
+    </div>
     <input type="file" id="file" accept=".pdf,.docx,.md,.txt">
   </label>
-  <div id="progress">
-    <div data-s="parse"><i></i>parse</div><div data-s="classify"><i></i>classify <em></em></div>
-    <div data-s="extract"><i></i>extract <em></em></div><div data-s="verify"><i></i>verify <em></em></div>
-  </div>
-  <div id="ghosts"></div>
-  <div id="applybar"><small id="count"></small><button id="apply">Seal onto OpenBox</button></div>
+
+  <div id="grid"></div>
+  <div id="scope"></div>
+</main>
+
+<div id="act">
+  <span class="n" id="count">0 selected</span><span class="sub" id="sub">Select the policies to apply</span>
+  <span class="spacer"></span>
+  <button class="ghost" id="reset">Start over</button>
+  <button id="apply" disabled>Apply to OpenBox</button>
 </div>
+
 <aside id="side">
   <header>
-    <h2>On OpenBox</h2>
-    <p id="sidesub">Policies enforced on this agent right now.</p>
-    <span class="live"><i></i><span id="livetxt">reading OpenBox…</span></span>
+    <h2>Enforced on OpenBox</h2>
+    <p id="sidesub">Live from the policy service.</p>
+    <div class="sync"><span class="dot" id="syncdot"></span><span id="synctxt">reading…</span><button id="refresh">Refresh</button></div>
   </header>
-  <div id="ledger"><div class="empty">Nothing enforced yet.</div></div>
+  <div id="ledger"><div class="empty">No policies enforced on this agent yet.</div></div>
 </aside>
 
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
-
 const MATTER = new URLSearchParams(location.search).get('matter') || 'trial';
 const $ = id => document.getElementById(id);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+$('matter').textContent = MATTER;
 
-/* ───────── 3D scene: ink motes + the sheet ───────── */
+/* ── ambient scene: slow gradient field + sparse particles ── */
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 const scene = new THREE.Scene();
-const cam = new THREE.PerspectiveCamera(38, 1, .1, 100); cam.position.set(0, 0, 9);
-scene.add(new THREE.AmbientLight(0xffffff, .55));
-const key = new THREE.DirectionalLight(0xfff2dc, 1.1); key.position.set(3, 4, 6); scene.add(key);
-const rim = new THREE.DirectionalLight(0x2fa39a, .6); rim.position.set(-4, -2, -3); scene.add(rim);
+const cam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const uniforms = {t:{value:0}, res:{value:new THREE.Vector2(1,1)}};
+const field = new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.ShaderMaterial({uniforms, transparent:true,
+  vertexShader:`void main(){gl_Position=vec4(position,1.);}`,
+  fragmentShader:`precision highp float;uniform float t;uniform vec2 res;
+  float n(vec2 p){return sin(p.x)*sin(p.y);}
+  void main(){vec2 uv=gl_FragCoord.xy/res; vec2 p=uv*3.0; float a=n(p+vec2(t*.05,t*.03))*.5+.5; float b=n(p*1.7+vec2(-t*.04,t*.06))*.5+.5;
+  vec3 c1=vec3(.39,.40,.95), c2=vec3(.13,.83,.93); vec3 col=mix(c1,c2,b)*a; float v=smoothstep(1.2,.2,distance(uv,vec2(.35,.6)));
+  gl_FragColor=vec4(col, .10*v);}`}));
+scene.add(field);
+const N=260, pos=new Float32Array(N*3); for(let i=0;i<N;i++){pos[i*3]=(Math.random()*2-1);pos[i*3+1]=(Math.random()*2-1);pos[i*3+2]=0;}
+const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+scene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0x8b93a7,size:1.6,sizeAttenuation:false,transparent:true,opacity:.35})));
+function resize(){const w=canvas.clientWidth||1,h=canvas.clientHeight||1;const pr=renderer.getPixelRatio();if(canvas.width!==Math.floor(w*pr)||canvas.height!==Math.floor(h*pr)){renderer.setSize(w,h,false);uniforms.res.value.set(w*pr,h*pr);}}
+(function frame(){resize();if(!reduce){uniforms.t.value+=.016;const p=pg.attributes.position.array;for(let i=0;i<N;i++){p[i*3+1]+=.00035;if(p[i*3+1]>1)p[i*3+1]=-1;}pg.attributes.position.needsUpdate=true;}renderer.render(scene,cam);requestAnimationFrame(frame);})();
 
-// motes
-const N = 900, pos = new Float32Array(N*3), spd = new Float32Array(N);
-for (let i=0;i<N;i++){ pos[i*3]=(Math.random()-.5)*22; pos[i*3+1]=(Math.random()-.5)*14; pos[i*3+2]=(Math.random()-.5)*8-2; spd[i]=.2+Math.random()*.8; }
-const motesGeo = new THREE.BufferGeometry(); motesGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-const motes = new THREE.Points(motesGeo, new THREE.PointsMaterial({color:0xaeb4c6, size:.035, transparent:true, opacity:.55, depthWrite:false}));
-scene.add(motes);
+/* ── upload ── */
+const drop=$('drop'), file=$('file');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)read(f);});
+drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();file.click();}});
+$('pick').addEventListener('click',e=>{e.preventDefault();file.click();});
+file.addEventListener('change',()=>{if(file.files[0])read(file.files[0]);});
 
-// the sheet: a paper plane with a canvas texture of text lines
-const tex = (() => {
-  const c = document.createElement('canvas'); c.width = 768; c.height = 1024; const g = c.getContext('2d');
-  g.fillStyle = '#F6F1E7'; g.fillRect(0,0,c.width,c.height);
-  g.fillStyle = '#141A33'; g.font = '600 34px "Source Serif 4", Georgia, serif'; g.fillText('MUTUAL NON-DISCLOSURE AGREEMENT', 64, 110);
-  g.fillStyle = '#AEB4C6';
-  for (let y=170, i=0; y<960; y+=26, i++){ const w = 640 - (i%7===0? 300 : (i%3)*60); g.fillRect(64, y, w, 7); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-})();
-const sheetGeo = new THREE.PlaneGeometry(3, 4, 24, 32);
-const sheetMat = new THREE.MeshStandardMaterial({map:tex, roughness:.85, metalness:0, side:THREE.DoubleSide});
-const sheet = new THREE.Mesh(sheetGeo, sheetMat); scene.add(sheet);
-const base = sheetGeo.attributes.position.array.slice();
-
-// scan bar (shown while reading)
-const scan = new THREE.Mesh(new THREE.PlaneGeometry(3.2, .06), new THREE.MeshBasicMaterial({color:0xc7892e, transparent:true, opacity:0}));
-scan.position.z = .03; scene.add(scan);
-
-let state = 'idle', t0 = performance.now(), scatter = 0;
-function resize(){ const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
-  if (canvas.width !== Math.floor(w*renderer.getPixelRatio()) || canvas.height !== Math.floor(h*renderer.getPixelRatio())){ renderer.setSize(w,h,false); cam.aspect = w/h; cam.updateProjectionMatrix(); } }
-addEventListener('resize', resize); resize();
-
-function frame(){
-  resize();
-  const t = (performance.now()-t0)/1000;
-  // motes drift
-  const p = motesGeo.attributes.position.array;
-  for (let i=0;i<N;i++){ p[i*3+1] += spd[i]*.0015; if (p[i*3+1] > 7) p[i*3+1] = -7; }
-  motesGeo.attributes.position.needsUpdate = true;
-  // sheet: gentle paper wobble, scatter when cards leave
-  const a = sheetGeo.attributes.position.array;
-  for (let i=0;i<a.length;i+=3){
-    const x = base[i], y = base[i+1];
-    a[i] = x; a[i+1] = y;
-    a[i+2] = Math.sin(x*1.4 + t*.9)*.05 + Math.cos(y*1.1 + t*.7)*.05 + scatter*Math.sin(x*3+y*2)*.6;
-  }
-  sheetGeo.attributes.position.needsUpdate = true; sheetGeo.computeVertexNormals();
-  sheet.rotation.y = Math.sin(t*.35)*.12 + (reduce?0:(mouse.x*.15)); sheet.rotation.x = Math.cos(t*.3)*.06 + (reduce?0:(-mouse.y*.1));
-  sheetMat.opacity = 1 - scatter*.75; sheetMat.transparent = scatter>0;
-  if (state==='reading'){ scan.material.opacity = .9; scan.position.y = 2 - ((t*1.1)%4); } else scan.material.opacity = Math.max(0, scan.material.opacity-.05);
-  renderer.render(scene, cam);
-  requestAnimationFrame(frame);
-}
-const mouse = {x:0,y:0};
-addEventListener('pointermove', e => { mouse.x = (e.clientX/innerWidth-.5)*2; mouse.y = (e.clientY/innerHeight-.5)*2; });
-frame();
-
-/* ───────── upload ───────── */
-const drop = $('drop'), file = $('file');
-['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) read(f); });
-drop.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); file.click(); } });
-file.addEventListener('change', () => { if (file.files[0]) read(file.files[0]); });
-
-let draft = null, cards = [];
+let draft=null, cards=[];
+const ORDER=['parse','classify','extract','verify'];
+function setStage(s){document.querySelectorAll('.stage').forEach(d=>d.classList.toggle('on',d.dataset.s===s));}
 async function read(f){
-  state = 'reading'; drop.style.opacity = 0; drop.style.pointerEvents = 'none';
-  $('progress').style.opacity = 1; setStage('parse');
-  const fd = new FormData(); fd.append('nda', f); fd.append('matter', MATTER);
-  // stage lights advance on a timer while the request runs; real timings replace them after
-  const order = ['parse','classify','extract','verify']; let i = 0;
-  const tick = setInterval(() => { i = Math.min(i+1, order.length-1); setStage(order[i]); }, 900);
-  let res, body;
-  try { res = await fetch('/propose', {method:'POST', body:fd}); body = await res.json(); }
-  catch (err) { clearInterval(tick); fail('Could not reach the compiler. Is nda-web running?'); return; }
+  drop.hidden=true; $('stages').classList.add('show'); setStage('parse');
+  let i=0; const tick=setInterval(()=>{i=Math.min(i+1,ORDER.length-1);setStage(ORDER[i]);},900);
+  const fd=new FormData(); fd.append('nda',f); fd.append('matter',MATTER);
+  const t0=performance.now(); let res,body;
+  try{res=await fetch('/propose',{method:'POST',body:fd});body=await res.json();}catch{clearInterval(tick);return fail('The compiler is not reachable. Start nda-web and try again.');}
   clearInterval(tick);
-  if (!res.ok) { fail(body.detail || 'The NDA could not be read.'); return; }
-  draft = body;
-  body.timings.forEach(x => { const el = document.querySelector(`[data-s="${x.stage}"]`); if (el){ el.classList.add('done'); el.classList.remove('on'); const em = el.querySelector('em'); if (em) em.textContent = Math.round(x.ms)+' ms'; } });
-  state = 'cards';
-  setTimeout(() => { $('progress').style.opacity = 0; }, 1800);
-  dealCards(body);
+  if(!res.ok) return fail(body.detail||'The file could not be read as an NDA.');
+  draft=body;
+  body.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.classList.remove('on');el.querySelector('em').textContent=Math.round(x.ms)+' ms';}});
+  $('stats').hidden=false; $('s-clauses').textContent=body.coverage.clauses; $('s-policies').textContent=body.controls.length; $('s-time').textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
+  render(body);
 }
-function setStage(s){ document.querySelectorAll('#progress div').forEach(d => { d.classList.toggle('on', d.dataset.s===s); }); }
-function fail(msg){ state='idle'; drop.style.opacity=1; drop.style.pointerEvents='auto'; $('progress').style.opacity=0; drop.querySelector('.hint').innerHTML = `<b>${msg}</b><span>Drop the file again to retry.</span>`; }
+function fail(msg){drop.hidden=false;$('stages').classList.remove('show');drop.querySelector('h2').textContent=msg;drop.querySelector('p').textContent='Drop the file again to retry.';}
 
-/* ───────── cards ───────── */
-const KIND = {policy_rule:'access rule', behavior_rule:'sequence rule', guardrail:'output scan', judgement:'judgement'};
-function dealCards(d){
-  const stage = $('stage'), W = stage.clientWidth, H = stage.clientHeight;
-  const byId = {}; d.clauses.forEach(c => byId[c.id] = c);
-  const held = Object.fromEntries(d.review.filter(r => r.includes('ungrounded')).map(r => [r.match(/§([\d.]+)/)[1], r.replace(/^§[\d.]+:\s*/, '')]));
-  const items = d.controls.map((c, i) => ({...c, i, cl: byId[c.clause_id]}));
-  // held clauses become dimmed cards too
-  Object.keys(held).forEach(id => items.push({held:true, clause_id:id, cl:byId[id], why:held[id]}));
-  const cx = W/2, cy = H/2, n = items.length;
-  scatter = 1;
-  const made = items.map((it, k) => {
-    const el = document.createElement('div');
-    el.className = 'card' + (it.held?' held':'');
-    const conf = it.verify_probability==null ? null : Math.round(it.verify_probability*100);
-    el.innerHTML = it.held
-      ? `<div class="top"><span class="clause">§${it.clause_id} ${it.cl.heading}</span><span class="kind">needs a human</span></div>
-         <p class="rule">The reader paraphrased this clause instead of quoting it, so no rule was proposed.</p>
-         <q>${it.cl.text}</q><div class="why">${it.why.replace('ungrounded values','Paraphrased:')}</div>`
-      : `<div class="top"><span class="clause">§${it.clause_id} ${it.cl.heading}</span><span class="kind">${KIND[it.type]||it.type}</span></div>
-         <p class="rule">${it.description}</p><q>${it.cl.text}</q>
-         <div class="foot"><span class="ring" style="--p:${conf||0}" data-v="${conf==null?'–':'.'+String(conf).padStart(2,'0')}"></span><span>judge confidence</span><span class="tick">${it.verify_probability>=.8?'✓':''}</span></div>`;
-    if (!it.held){ if (it.verify_probability>=.8) el.classList.add('sel'); el.tabIndex = 0;
-      el.addEventListener('click', () => toggle(el)); el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(el);} }); }
-    el.style.left = (cx-140)+'px'; el.style.top = (cy-110)+'px'; el.style.transform = 'scale(.4)'; el.style.opacity = 0;
-    stage.appendChild(el); el.dataset.i = it.i; cards.push(el);
-    return el;
+/* ── policy grid ── */
+const KIND={policy_rule:['access','Access rule'],behavior_rule:['sequence','Sequence rule'],guardrail:['scan','Output scan'],judgement:['judge','Judgement']};
+function render(d){
+  const byId={}; d.clauses.forEach(c=>byId[c.id]=c);
+  const held=Object.fromEntries(d.review.filter(r=>r.includes('ungrounded')).map(r=>[r.match(/§([\d.]+)/)[1],r.replace(/^§[\d.]+:\s*/,'').replace('ungrounded values','paraphrased:')]));
+  const grid=$('grid'); grid.innerHTML=''; cards=[];
+  const items=d.controls.map((c,i)=>({...c,i,cl:byId[c.clause_id]}));
+  Object.keys(held).forEach(id=>items.push({held:true,clause_id:id,cl:byId[id],why:held[id]}));
+  items.forEach((it,k)=>{
+    const el=document.createElement('div'); el.className='card'+(it.held?' held':'');
+    const conf=it.verify_probability==null?null:Math.round(it.verify_probability*100);
+    const [bc,bl]=it.held?['held','Needs review']:(KIND[it.type]||['', it.type]);
+    el.innerHTML=`<div class="top"><span class="badge ${bc}">${bl}</span><span class="sec">§${it.clause_id} · ${it.cl.heading}</span></div>
+      <p class="rule">${it.held?'No policy proposed: the extraction paraphrased this clause instead of quoting it.':it.description}</p>
+      <p class="quote">${it.cl.text}</p>
+      ${it.held?`<div class="note">${it.why}</div>`:`<div class="foot"><span class="meter" title="judge confidence"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'% confidence'}</span><span class="cb">${it.verify_probability>=.8?'✓':''}</span></div>`}`;
+    if(!it.held){el.tabIndex=0;el.dataset.i=it.i;if(it.verify_probability>=.8)el.classList.add('sel');
+      el.addEventListener('click',()=>toggle(el));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(el);}});cards.push(el);}
+    grid.appendChild(el); setTimeout(()=>el.classList.add('in'),reduce?0:60*k);
   });
-  // Lay out on a two-row constellation using the real card heights, so no card
-  // covers another's checkbox. Header stays clear above, the seal bar below.
-  const rows = n > 3 ? 2 : 1, cols = Math.ceil(n/rows);
-  const cardH = Math.max(...made.map(e => e.offsetHeight)), gapY = 18;
-  const top0 = 168, bottom = H - 96, avail = bottom - top0;
-  const need = rows*cardH + (rows-1)*gapY, sc = Math.min(1, avail/need);
-  const colW = Math.min(312, (W-56)/cols), gridW = cols*colW, left0 = (W-gridW)/2 + (colW-280)/2;
-  made.forEach((el, k) => {
-    const col = k % cols, row = Math.floor(k/cols);
-    const tx = left0 + col*colW + (Math.random()-.5)*14 + (row%2)*18;
-    const ty = top0 + row*(cardH*sc+gapY) + (Math.random()-.5)*10, rot = (Math.random()-.5)*3;
-    const delay = reduce ? 0 : 120 + k*110;
-    setTimeout(() => { el.style.transition = reduce ? 'none' : 'transform .9s cubic-bezier(.2,.9,.2,1.05), opacity .5s, left .9s cubic-bezier(.2,.9,.2,1.05), top .9s cubic-bezier(.2,.9,.2,1.05)';
-      el.style.transformOrigin = 'top left'; el.style.opacity = 1; el.style.left = tx+'px'; el.style.top = ty+'px'; el.style.transform = `scale(${sc}) rotate(${rot}deg)`; }, delay);
-  });
-  // ghosts
-  const scope = d.classifications.filter(c => c.kind==='not_enforceable').map(c => byId[c.clause_id]);
-  if (scope.length){ $('ghosts').innerHTML = `<span class="lab">Not something an agent does at runtime, so nothing to enforce:</span>` + scope.map(c => `<span>§${c.id} ${c.heading}</span>`).join(''); $('ghosts').style.opacity = 1; }
-  floatLoop(); updateCount(); $('applybar').classList.add('show');
+  const scope=d.classifications.filter(c=>c.kind==='not_enforceable').map(c=>byId[c.clause_id]);
+  const sc=$('scope'); if(scope.length){sc.innerHTML=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${c.id} ${c.heading}</span>`).join('');sc.classList.add('show');}
+  updateCount(); $('act').classList.add('show');
 }
-function toggle(el){ el.classList.toggle('sel'); el.querySelector('.tick').textContent = el.classList.contains('sel') ? '✓' : ''; updateCount(); }
-function updateCount(){ const n = cards.filter(c => c.classList.contains('sel')).length; $('count').textContent = n ? `${n} selected` : 'Select at least one policy'; $('apply').disabled = !n; }
-// idle float: each card bobs on its own phase
-function floatLoop(){ if (reduce) return; const ph = cards.map(() => Math.random()*Math.PI*2);
-  (function loop(){ const t = performance.now()/1000; cards.forEach((el,i) => { if (el.dataset.gone) return; const dy = Math.sin(t*.8+ph[i])*6, dx = Math.cos(t*.6+ph[i])*4; el.style.translate = `${dx}px ${dy}px`; }); requestAnimationFrame(loop); })(); }
+function toggle(el){el.classList.toggle('sel');el.querySelector('.cb').textContent=el.classList.contains('sel')?'✓':'';updateCount();}
+function updateCount(){const n=cards.filter(c=>c.classList.contains('sel')).length;$('count').textContent=`${n} selected`;$('sub').textContent=n?'Policies are created inactive, tested, then activated.':'Select the policies to apply';$('apply').disabled=!n;}
+$('reset').addEventListener('click',()=>location.reload());
 
-/* ───────── ledger ───────── */
-const ledger = $('ledger');
-function entry(o){ const e = document.createElement('div'); e.className = 'entry '+(o.status||''); e.id = o.key||'';
-  e.innerHTML = `<div class="t"><span class="name">${o.name}</span><span class="clause">${o.clause||''}</span></div>
-    <div class="st"><i></i><span class="s">${o.label||o.status}</span><span class="opa">${o.opa?'enforced in OPA':''}</span></div>${o.note?`<div class="note">${o.note}</div>`:''}`;
-  return e; }
+/* ── side panel ── */
+const ledger=$('ledger');
+function row(o){const e=document.createElement('div');e.className='row '+(o.status||'');e.id=o.key||'';
+  e.innerHTML=`<div class="t"><span class="name" title="${o.name}">${o.name}</span><span class="badge ${o.bc||''}">${o.kind||''}</span></div>
+  <div class="st"><span class="dot"></span><span class="s">${o.label||o.status}</span><span class="opa">${o.opa?'synced to OPA':''}</span></div>${o.note?`<div class="why">${o.note}</div>`:''}`;
+  if(o.opa)e.classList.add('opa'); return e;}
+const KB={'access rule':['access','Access'],'sequence rule':['sequence','Sequence'],'output scan':['scan','Scan']};
 async function loadState(){
-  try { const r = await fetch(`/openbox/state?matter=${MATTER}`); const s = await r.json();
-    $('agentname').textContent = s.agent_name; $('sidesub').textContent = `Policies enforced on ${s.agent_name} right now.`;
-    $('livetxt').textContent = `${s.backend} · ${s.items.length} active`;
-    const keep = [...ledger.querySelectorAll('.entry.failed, .entry.applying')];
-    const names = new Set(s.items.map(it => it.name));
-    ledger.innerHTML = '';
-    keep.filter(e => !names.has(e.querySelector('.name').textContent)).forEach(e => ledger.appendChild(e));
-    s.items.forEach(it => ledger.appendChild(entry({name:it.name, clause:it.clause, status:'active', label:'active on OpenBox', opa:it.opa_loaded, key:'r-'+it.id})));
-    if (!ledger.children.length) ledger.innerHTML = '<div class="empty">Nothing enforced yet.</div>';
-    return s;
-  } catch { $('livetxt').textContent = 'OpenBox unreachable'; }
+  try{const r=await fetch(`/openbox/state?matter=${MATTER}`);const s=await r.json();
+    $('agentname').textContent=s.agent_name; $('livetxt').textContent=s.backend; $('livedot').className='dot';
+    $('sidesub').textContent=`Agent: ${s.agent_name}`; $('synctxt').textContent=`${s.items.length} active · ${s.items.filter(i=>i.opa_loaded).length} synced to OPA`; $('syncdot').className='dot';
+    const keep=[...ledger.querySelectorAll('.row.failed,.row.applying')]; const names=new Set(s.items.map(i=>i.name));
+    ledger.innerHTML=''; keep.filter(e=>!names.has(e.querySelector('.name').textContent)).forEach(e=>ledger.appendChild(e));
+    s.items.forEach(it=>{const [bc,bl]=KB[it.kind]||['',it.kind];ledger.appendChild(row({name:it.name,kind:bl,bc,status:'active',label:'Active',opa:it.opa_loaded,key:'r-'+it.id}));});
+    if(!ledger.children.length)ledger.innerHTML='<div class="empty">No policies enforced on this agent yet.</div>';
+  }catch{$('livetxt').textContent='OpenBox unreachable';$('livedot').className='dot off';$('synctxt').textContent='unreachable';$('syncdot').className='dot off';}
 }
-loadState();
+loadState(); $('refresh').addEventListener('click',loadState);
 
-/* ───────── apply: cards fly into the ledger ───────── */
-$('apply').addEventListener('click', async () => {
-  const chosen = cards.filter(c => c.classList.contains('sel'));
-  if (!chosen.length) return;
-  $('apply').disabled = true; $('count').textContent = `sealing ${chosen.length}…`;
-  if (ledger.querySelector('.empty')) ledger.innerHTML = '';
-  const pending = [];
-  for (const el of chosen){
-    const i = +el.dataset.i, c = draft.controls[i];
-    const e = entry({name:c.payload.rule_name||c.payload.name, clause:'§'+c.clause_id, status:'applying', label:'applying', key:'p-'+i});
-    ledger.prepend(e);
-    await fly(el, e);
-    el.dataset.gone = 1; el.remove();
-    pending.push({i, e});
-  }
-  const r = await fetch('/apply', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({draft_id:draft.draft_id, selected:pending.map(p=>p.i)})});
-  const d = await r.json();
-  if (!r.ok){ pending.forEach(p => setEntry(p.e, 'failed', d.detail||'apply failed')); $('count').textContent = 'Could not apply'; return; }
-  d.results.forEach(res => { const p = pending.find(p => p.i===res.index); if (!p) return; setEntry(p.e, res.status, res.note); });
-  cards = cards.filter(c => !c.dataset.gone); updateCount();
-  if (!cards.length) $('applybar').classList.remove('show');
-  // OPA picks the bundle up on its next poll; re-read state a few times
-  await loadState();
-  [10000, 25000, 40000].forEach(ms => setTimeout(loadState, ms));
+/* ── apply ── */
+$('apply').addEventListener('click',async()=>{
+  const chosen=cards.filter(c=>c.classList.contains('sel')); if(!chosen.length)return;
+  $('apply').disabled=true; $('sub').textContent=`Applying ${chosen.length}…`;
+  if(ledger.querySelector('.empty'))ledger.innerHTML='';
+  const pending=[];
+  for(const el of chosen){const i=+el.dataset.i,c=draft.controls[i];const [bc,bl]=KIND[c.type]||['',c.type];
+    const e=row({name:c.payload.rule_name||c.payload.name,kind:bl.split(' ')[0],bc,status:'applying',label:'Applying',key:'p-'+i});
+    ledger.prepend(e); await fly(el,e); el.classList.remove('sel','in'); el.style.display='none'; pending.push({i,e});}
+  const r=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft_id:draft.draft_id,selected:pending.map(p=>p.i)})});
+  const d=await r.json();
+  if(!r.ok){pending.forEach(p=>setRow(p.e,'failed',d.detail||'Apply failed'));$('sub').textContent='Could not apply';return;}
+  d.results.forEach(res=>{const p=pending.find(p=>p.i===res.index);if(p)setRow(p.e,res.status,res.note);});
+  cards=cards.filter(c=>c.style.display!=='none'); updateCount();
+  $('sub').textContent=`${d.results.filter(x=>x.status==='active').length} of ${pending.length} active on OpenBox`;
+  await loadState(); [10000,25000,40000].forEach(ms=>setTimeout(loadState,ms));
 });
-function setEntry(e, status, note){ e.className = 'entry '+status; e.querySelector('.s').textContent = status==='active' ? 'active on OpenBox' : status==='failed' ? 'not applied' : status;
-  if (note){ const n = document.createElement('div'); n.className='note'; n.textContent = note; e.appendChild(n); } }
-function fly(from, to){ return new Promise(res => {
-  if (reduce){ res(); return; }
-  const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
-  const ghost = document.createElement('div'); ghost.className = 'fly';
-  Object.assign(ghost.style, {left:a.left+'px', top:a.top+'px', width:a.width+'px', height:a.height+'px', opacity:.95});
-  document.body.appendChild(ghost); from.style.opacity = 0;
-  requestAnimationFrame(() => { Object.assign(ghost.style, {left:b.left+'px', top:b.top+'px', width:b.width+'px', height:b.height+'px', opacity:.2, borderRadius:'6px'}); });
-  setTimeout(() => { ghost.remove(); res(); }, 780);
-}); }
+function setRow(e,status,note){e.className='row '+status;e.querySelector('.s').textContent=status==='active'?'Active':status==='failed'?'Not applied':status;
+  if(note){const n=document.createElement('div');n.className='why';n.textContent=note;e.appendChild(n);}}
+function fly(from,to){return new Promise(res=>{if(reduce)return res();const a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
+  const g=document.createElement('div');g.className='fly';Object.assign(g.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',opacity:1});document.body.appendChild(g);
+  requestAnimationFrame(()=>Object.assign(g.style,{left:b.left+'px',top:b.top+'px',width:b.width+'px',height:b.height+'px',opacity:.15}));setTimeout(()=>{g.remove();res();},620);});}
 </script>
 </body>
 </html>
