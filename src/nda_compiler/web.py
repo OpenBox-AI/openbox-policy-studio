@@ -72,7 +72,9 @@ $('f').onsubmit=async e=>{e.preventDefault();$('t').textContent='reading…';$('
 const s=performance.now();const res=await fetch('/propose',{method:'POST',body:new FormData($('f'))});const d=await res.json();
 if(!res.ok){$('t').textContent=d.detail||'failed';return}
 draft=d;$('t').textContent=`${Math.round(performance.now()-s)} ms · `+d.timings.map(x=>`${x.stage} ${Math.round(x.ms)}ms`).join(' · ');
-const c=d.coverage;$('cov').hidden=false;$('cov').innerHTML=`<b>${c.clauses}</b> clauses · <b>${d.controls.length}</b> policies available · <b class=mut>${c.not_enforceable}</b> clauses outside runtime scope (term, return/destroy, governing law)`;
+const c=d.coverage;const held=d.review.filter(x=>x.includes('ungrounded'));
+$('cov').hidden=false;$('cov').innerHTML=`<b>${c.clauses}</b> clauses · <b>${d.controls.length}</b> policies available · <b class=mut>${c.not_enforceable}</b> outside runtime scope (term, return/destroy, governing law)`
++(held.length?`<div class=warn style="margin-top:6px">Needs a human: ${held.map(x=>x.replace('ungrounded values','extraction paraphrased the clause —')).join('; ')}</div>`:'');
 const q={};d.clauses.forEach(x=>q[x.id]=x);
 $('r').innerHTML='<tr><th></th><th>Clause</th><th>Policy</th><th>Kind</th><th>Judge</th><th>Status</th></tr>'+d.controls.map((x,i)=>{
 const cl=q[x.clause_id];const chk=x.verify_probability>=0.8?'checked':'';

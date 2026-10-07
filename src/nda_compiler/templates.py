@@ -115,45 +115,42 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
 
 
 def third_party_disclosure(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    """After reading covered material, no outbound send within the window."""
+    """After reading covered material, no outbound HTTP within the window.
+
+    Behavior rules run over instrumented spans, so the trigger is the semantic
+    type of the side effect (an outbound POST), not a tool name. The prior state
+    is the governed read tool, matched on the span name.
+    """
 
     controls = []
     for agent in bindings.all_agents:
-        for tool in bindings.outbound_tools:
-            payload = {
-                "rule_name": _rule_name(f"outbound after read via {tool}", obligation, bindings),
-                "description": obligation.source_quote,
-                "priority": 90,
-                "trigger": "llm_tool_call",
-                "trigger_match": [{"field": "tool_name", "op": "equals", "value": tool}],
-                "states": [
-                    {
-                        "semantic_type": "llm_tool_call",
-                        "match": [
-                            {"field": "tool_name", "op": "in", "value": bindings.read_tools},
-                            {
-                                "field": "document_id",
-                                "op": "starts_with",
-                                "value": folder,
-                            },
-                        ],
-                    }
-                    for folder in bindings.covered_folders
-                ],
-                "time_window": 3600,
-                "verdict": VERDICT_BLOCK,
-                "reject_message": _reason(obligation, bindings),
-                "trust_impact": "high",
-            }
-            controls.append(
-                Control(
-                    clause_id=obligation.clause_id,
-                    kind=obligation.kind,
-                    type="behavior_rule",
-                    agent_id=agent.id,
-                    payload=payload,
-                )
+        payload = {
+            "rule_name": _rule_name("outbound after read", obligation, bindings),
+            "description": obligation.source_quote,
+            "priority": 90,
+            "trigger": "http_post",
+            "trigger_match": [],
+            "states": [
+                {
+                    "semantic_type": "llm_tool_call",
+                    "match": [{"field": "name", "op": "contains", "value": tool}],
+                }
+                for tool in bindings.read_tools
+            ],
+            "time_window": 3600,
+            "verdict": VERDICT_BLOCK,
+            "reject_message": _reason(obligation, bindings),
+            "trust_impact": "high",
+        }
+        controls.append(
+            Control(
+                clause_id=obligation.clause_id,
+                kind=obligation.kind,
+                type="behavior_rule",
+                agent_id=agent.id,
+                payload=payload,
             )
+        )
     return controls
 
 
@@ -303,11 +300,11 @@ def describe(control: Control, bindings: Bindings) -> str:
             f"{folders}. Attempts on documents in other folders are allowed."
         )
     if control.type == "behavior_rule":
-        tool = p["trigger_match"][0]["value"]
+        reads = ", ".join(bindings.read_tools)
         return (
-            f"If agent {agent} has read any document from the {party} folder {folders} within "
-            f"the last {p['time_window'] // 60} minutes, then calling the outbound tool "
-            f"'{tool}' (which sends content outside the firm's systems) is blocked."
+            f"If agent {agent} has called {reads} within the last {p['time_window'] // 60} "
+            f"minutes, any outbound HTTP POST (sending content outside the firm's systems) "
+            f"is blocked."
         )
     if control.type == "guardrail":
         if p["guardrail_type"] == GUARDRAIL_PII:
