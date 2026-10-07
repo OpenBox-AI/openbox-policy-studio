@@ -52,17 +52,23 @@ class Extractor(Protocol):
     async def extract(self, clause: Clause, kind: ControlKind, definitions: str) -> Obligation: ...
 
 
+def _squash(value: str) -> str:
+    """Compare without whitespace or quote style: PDF extraction wraps words
+    mid-line and curls quotes, neither of which makes a value a paraphrase."""
+
+    curly = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
+    return re.sub(r"\s+", "", value).translate(curly).lower()
+
+
 def _grounded(obligation: Obligation, nda_text: str) -> Obligation:
-    haystack = re.sub(r"\s+", " ", nda_text).lower()
+    haystack = _squash(nda_text)
     literals = [
         *obligation.permitted_recipients,
         *obligation.prohibited_recipients,
         *obligation.marked_terms,
         obligation.source_quote,
     ]
-    missing = [
-        value for value in literals if value and re.sub(r"\s+", " ", value).lower() not in haystack
-    ]
+    missing = [value for value in literals if value and _squash(value) not in haystack]
     return obligation.model_copy(update={"ungrounded": missing})
 
 

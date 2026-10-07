@@ -9,6 +9,7 @@ its own timing; the report shows where the seconds went.
 
 from __future__ import annotations
 
+import json
 import os
 import time
 from pathlib import Path
@@ -108,10 +109,26 @@ def build_graph(services: Services):
     async def build(state: CompileState) -> dict:
         started = time.perf_counter()
         controls: list[Control] = []
+        # Sub-clauses often restate one duty (§2.1 and §2.2 both limiting access);
+        # an identical control is proposed once and credits every clause.
+        seen: dict[str, Control] = {}
         for obligation in state["obligations"]:
             if obligation.ungrounded:
                 continue
-            controls.extend(build_controls(obligation, services.bindings))
+            for control in build_controls(obligation, services.bindings):
+                body = {
+                    k: v
+                    for k, v in control.payload.items()
+                    if k not in ("rule_name", "description", "reason", "reject_message")
+                }
+                key = json.dumps([control.type, control.agent_id, body], sort_keys=True)
+                if key in seen:
+                    seen[key].note = (
+                        seen[key].note + ", " if seen[key].note else "also "
+                    ) + f"§{control.clause_id}"
+                    continue
+                seen[key] = control
+                controls.append(control)
         return _timed("build", state, started, {"controls": controls})
 
     async def verify(state: CompileState) -> dict:

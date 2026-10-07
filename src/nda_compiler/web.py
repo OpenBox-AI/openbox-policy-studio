@@ -50,6 +50,18 @@ async def index() -> str:
     return (_STATIC / "index.html").read_text(encoding="utf-8")
 
 
+@app.get("/matters")
+async def matters() -> JSONResponse:
+    out = []
+    for path in sorted(BINDINGS_DIR.glob("*.yaml")):
+        try:
+            b = load_bindings(path)
+            out.append({"id": path.stem, "label": f"{path.stem} · {b.disclosing_party}"})
+        except Exception:
+            out.append({"id": path.stem, "label": path.stem})
+    return JSONResponse(out)
+
+
 @app.get("/openbox/state")
 async def openbox_state(matter: str = "trial") -> JSONResponse:
     """What is enforced on the matter's agent(s) right now, straight from OpenBox."""

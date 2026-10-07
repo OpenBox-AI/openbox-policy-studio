@@ -38,6 +38,21 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+_VERBS = {"shall", "may", "must", "will", "is", "are", "means", "do", "does"}
+
+
+def _looks_like_title(fragment: str) -> bool:
+    """'Permitted Disclosure' is a title; 'The Adviser shall not permit contractors' is not."""
+
+    words = fragment.split()
+    if not words or len(words) > 6 or len(fragment) >= 60:
+        return False
+    if any(w.lower() in _VERBS for w in words):
+        return False
+    capitalised = sum(1 for w in words if w[0].isupper())
+    return capitalised >= len(words) - 1
+
+
 def split_clauses(text: str) -> list[Clause]:
     clauses: list[Clause] = []
     current_id: str | None = None
@@ -67,11 +82,15 @@ def split_clauses(text: str) -> list[Clause]:
             rest = match.group(2).strip()
             # "3. Permitted Disclosure. The Receiving Party may..." keeps the
             # heading separate from the body it introduces.
-            if "." in rest and len(rest.split(".")[0]) < 60:
+            first = rest.split(".")[0]
+            if "." in rest and _looks_like_title(first):
+                # "3. Permitted Disclosure. The Receiving Party may..." — a short
+                # title followed by the body.
                 heading, _, body_start = rest.partition(".")
                 buffer = [body_start]
             else:
-                heading, buffer = rest, []
+                # No title, the sentence itself is the clause body.
+                heading, buffer = "", [rest]
             continue
         if current_id is not None:
             buffer.append(line)

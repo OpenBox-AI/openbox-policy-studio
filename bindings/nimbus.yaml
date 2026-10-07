@@ -1,0 +1,16 @@
+# Single-agent trial bindings for the Nimbus Robotics Ltd NDA.
+matter: nimbus
+disclosing_party: Nimbus Robotics Ltd
+disclosing_party_aliases: [Nimbus Robotics]
+receiving_party: Sellist Advisory LLP
+codenames: [Project Kestrel]
+purpose: advising the Receiving Party's client on the valuation and technical due diligence of the proposed acquisition
+covered_folders:
+  - 0002/40001/
+representatives: []
+other_agents:
+  - id: 16e4c8e5-0921-4946-ae5b-96fe1966e57d
+    name: compliance agent
+read_tools: [read_document]
+file_tools: [upload_document]
+outbound_tools: [send_email, http_post]

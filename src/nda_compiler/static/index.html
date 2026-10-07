@@ -30,6 +30,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px so
 .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;box-shadow:0 0 0 3px rgba(45,212,160,.15)}
 .dot.off{background:var(--bad);box-shadow:0 0 0 3px rgba(240,97,109,.15)}
 .chip{border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--text)}
+select.chip{background:var(--panel-2);font:inherit;font-size:12px;padding:3px 26px 3px 10px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px;background-repeat:no-repeat;cursor:pointer}
 
 /* layout */
 #main{position:fixed;top:var(--bar);left:0;right:var(--side);bottom:0;z-index:1;overflow:auto;padding:28px 32px 110px}
@@ -139,7 +140,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px so
 <div id="bar">
   <div class="brand"><i></i>OpenBox Policy Studio</div>
   <span class="sep"></span>
-  <span class="crumb">Matter <b id="matter">trial</b></span>
+  <span class="crumb">Matter</span><select id="matter" class="chip" aria-label="Matter"></select>
   <span class="chip" id="agentname">compliance agent</span>
   <div class="right"><span class="dot" id="livedot"></span><span id="livetxt">connecting…</span></div>
 </div>
@@ -198,10 +199,13 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px so
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
-const MATTER = new URLSearchParams(location.search).get('matter') || 'trial';
 const $ = id => document.getElementById(id);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-$('matter').textContent = MATTER;
+let MATTER = new URLSearchParams(location.search).get('matter') || 'trial';
+(async () => { try { const ms = await (await fetch('/matters')).json();
+  $('matter').innerHTML = ms.map(m => `<option value="${m.id}" ${m.id===MATTER?'selected':''}>${m.label}</option>`).join('');
+  } catch { $('matter').innerHTML = `<option>${MATTER}</option>`; } })();
+$('matter').addEventListener('change', e => { const u = new URL(location); u.searchParams.set('matter', e.target.value); location.href = u; });
 
 /* ── ambient scene: slow gradient field + sparse particles ── */
 const canvas = $('scene');
@@ -263,7 +267,7 @@ function render(d){
     const el=document.createElement('div'); el.className='card'+(it.held?' held':'');
     const conf=it.verify_probability==null?null:Math.round(it.verify_probability*100);
     const [bc,bl]=it.held?['held','Needs review']:(KIND[it.type]||['', it.type]);
-    el.innerHTML=`<div class="top"><span class="badge ${bc}">${bl}</span><span class="sec">§${it.clause_id} · ${it.cl.heading}</span></div>
+    el.innerHTML=`<div class="top"><span class="badge ${bc}">${bl}</span><span class="sec">§${it.clause_id}${it.note&&it.note.startsWith('also')?' ('+it.note+')':''}${it.cl.heading?' · '+it.cl.heading:''}</span></div>
       <p class="rule">${it.held?'No policy proposed: the extraction paraphrased this clause instead of quoting it.':it.description}</p>
       <p class="quote">${it.cl.text}</p>
       ${it.held?`<div class="note">${it.why}</div>`:`<div class="foot"><span class="meter" title="judge confidence"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'% confidence'}</span><span class="cb">${it.verify_probability>=.8?'✓':''}</span></div>`}`;

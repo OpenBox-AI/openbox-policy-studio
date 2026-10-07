@@ -15,6 +15,18 @@ NDA = ROOT / "fixtures" / "coca_cola_nda.md"
 BINDINGS = ROOT / "bindings" / "coca-cola.yaml"
 
 
+def test_split_keeps_untitled_subclauses():
+    text = (
+        "Section 2. Access.\n"
+        "2.1 The Adviser shall ensure access is limited.\n"
+        "2.2 The Adviser shall not permit contractors."
+    )
+    clauses = pdf.split_clauses(text)
+    assert [c.id for c in clauses] == ["2.1", "2.2"]
+    assert clauses[0].heading == ""
+    assert clauses[0].text.startswith("The Adviser shall ensure")
+
+
 def test_split_clauses_finds_numbered_sections():
     _, clauses = pdf.load(NDA)
     assert [c.id for c in clauses] == [str(i) for i in range(1, 10)]
