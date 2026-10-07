@@ -15,7 +15,6 @@ pipeline runs offline and tests stay hermetic.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import re
 from typing import Any, Protocol
@@ -160,27 +159,39 @@ class TypeSafeJudge:
 
         result = await self._client.system_one(
             {
-                "clause": clause.text,
-                "generated_rule_summary": summary,
-                "generated_rule": json.dumps(control_payload, sort_keys=True),
+                "nda_clause": clause.text,
+                "proposed_control_in_plain_english": summary,
+                "note": "The control is one of several derived from this clause and is enforced "
+                "automatically on an AI agent's tool calls. It is not expected to cover the "
+                "whole clause by itself.",
             },
             {
-                "faithful": Noul(
+                "wrong": Noul(
                     instructions={
-                        "what": "Does the generated rule faithfully enforce this clause on an "
-                        "AI agent's tool calls, without going beyond what the clause requires?"
+                        "what": "Would enforcing this control be a mistake under this clause?",
                     },
                     criteria={
-                        "true": "The rule blocks or constrains exactly the behaviour the clause "
-                        "forbids, for the parties and material the clause names.",
-                        "false": "The rule targets the wrong material, the wrong agents, "
-                        "a different action, or something the clause does not say.",
+                        "true": {
+                            "what": "The control forbids something the clause permits, targets "
+                            "material or a party the clause does not cover, or restricts an "
+                            "action unrelated to what the clause restricts.",
+                            "example": "Clause forbids emailing documents to third parties; "
+                            "control blocks an agent from reading a public website.",
+                        },
+                        "false": {
+                            "what": "The control restricts behaviour of the kind the clause "
+                            "restricts, for the material and parties the clause covers, even "
+                            "if it only addresses part of the clause.",
+                            "example": "Clause limits disclosure to Representatives; control "
+                            "blocks one non-Representative agent from reading the covered folder.",
+                        },
                     },
                 )
             },
             model=self.model,
         )
-        return float(result.nouls["faithful"].noul)
+        # Reported as P(faithful) so the threshold reads the same way everywhere.
+        return 1.0 - float(result.nouls["wrong"].noul)
 
 
 def judge_from_env() -> Judge:

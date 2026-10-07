@@ -270,6 +270,57 @@ def build_controls(obligation: Obligation, bindings: Bindings) -> list[Control]:
     return template(obligation, bindings) if template else []
 
 
+def describe(control: Control, bindings: Bindings) -> str:
+    """The control in plain English, for the verifier and the review screen.
+
+    JEV reads literally, so it is shown what the rule does to whom, not the
+    payload's operators, enum numbers and placeholder ids.
+    """
+
+    names = {a.id: a.name for a in bindings.all_agents}
+    agent = names.get(control.agent_id, control.agent_id)
+    reps = ", ".join(a.name for a in bindings.representatives) or "none"
+    role = (
+        "a Representative"
+        if control.agent_id in {a.id for a in bindings.representatives}
+        else "not a Representative"
+    )
+    folders = ", ".join(bindings.covered_folders)
+    party = bindings.disclosing_party
+    p = control.payload
+    if control.type == "policy_rule":
+        tool = p["conditions"][0]["right"]["value"]
+        return (
+            f"Agent {agent} ({role} under this NDA; the Representatives are {reps}) is blocked "
+            f"from calling the tool '{tool}' on any document stored under the {party} folder "
+            f"{folders}. Attempts on documents in other folders are allowed."
+        )
+    if control.type == "behavior_rule":
+        tool = p["trigger_match"][0]["value"]
+        return (
+            f"If agent {agent} has read any document from the {party} folder {folders} within "
+            f"the last {p['time_window'] // 60} minutes, then calling the outbound tool "
+            f"'{tool}' (which sends content outside the firm's systems) is blocked."
+        )
+    if control.type == "guardrail":
+        if p["guardrail_type"] == GUARDRAIL_PII:
+            return (
+                f"Every output agent {agent} produces is scanned for personal data (names, "
+                f"email addresses, phone numbers, card numbers); any output containing such "
+                f"personal data is blocked before delivery."
+            )
+        return (
+            f"Every output agent {agent} produces is scanned for the confidential markings "
+            f"{p['params']['banned_words']}; any output containing one is blocked before delivery."
+        )
+    purpose = p["question"]["instructions"]["purpose"]
+    return (
+        f"Whenever agent {agent} reads a {party} document, an independent judge is asked "
+        f"whether the task being performed falls outside the Purpose ('{purpose}'); if the "
+        f"probability that it does exceeds {p['block_above']}, the read is blocked."
+    )
+
+
 def summarize(control: Control, agents: list[AgentBinding]) -> str:
     names = {a.id: a.name for a in agents}
     p = control.payload

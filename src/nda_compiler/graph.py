@@ -30,7 +30,7 @@ from .models import (
     StageTiming,
 )
 from .openbox_api import OpenBoxBackend, apply_all
-from .templates import build_controls, summarize
+from .templates import build_controls, describe, summarize
 
 
 class CompileState(TypedDict, total=False):
@@ -120,10 +120,7 @@ def build_graph(services: Services):
         controls = state["controls"]
         probabilities = await verify_all(
             services.judge,
-            [
-                (by_id[c.clause_id], c.payload, summarize(c, services.bindings.all_agents))
-                for c in controls
-            ],
+            [(by_id[c.clause_id], c.payload, describe(c, services.bindings)) for c in controls],
         )
         verified: list[Control] = []
         review = list(state.get("review", []))
