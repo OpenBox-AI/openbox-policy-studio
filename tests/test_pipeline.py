@@ -53,7 +53,7 @@ async def test_compile_emits_grounded_controls(services):
     # One agent x (read + file) x one covered folder, blocked.
     policy_rules = [c for c in access if c.payload["decision"] == "BLOCK"]
     assert len(policy_rules) == 2
-    # §4 covers every outbound tool; this matter has no exported graph, so the
+    # §4 covers every outbound tool; this firm has no exported graph, so the
     # bindings' two outbound tools apply, with the clause's consent wording.
     sends = [c for c in report.controls if c.kind == ControlKind.THIRD_PARTY_DISCLOSURE]
     assert len(sends) == 2 and all(c.payload["decision"] == "REQUIRE_APPROVAL" for c in sends)

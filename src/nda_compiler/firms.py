@@ -73,7 +73,7 @@ _SYSTEM = (
     "shorter names the text uses for that party (e.g. 'the Bank', 'Atlas'). codenames: "
     "project codenames and confidentiality markings the text puts in quotation marks, "
     "without the quotation marks. competitors: companies the agreement names as parties "
-    "who must not receive the information. folder_references: any matter or folder "
+    "who must not receive the information. folder_references: any matter number or folder "
     "numbers the text cites, exactly as written. purpose: the defined Purpose, verbatim."
 )
 
@@ -176,7 +176,7 @@ def write_bindings(
 ) -> Path:
     slug = profile.slug
     body: dict[str, Any] = {
-        "matter": slug,
+        "firm": slug,
         "disclosing_party": profile.disclosing_party,
         "disclosing_party_aliases": profile.disclosing_party_aliases,
         "receiving_party": profile.receiving_party or "Sellist Advisory LLP",

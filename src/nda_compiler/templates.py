@@ -39,7 +39,7 @@ def _condition(cid: str, field: str, operator: str, value: str | None = None) ->
 
 
 def _rule_name(prefix: str, obligation: Obligation, bindings: Bindings) -> str:
-    return f"NDA {bindings.matter} §{obligation.clause_id} {prefix}"[:255]
+    return f"NDA {bindings.firm} §{obligation.clause_id} {prefix}"[:255]
 
 
 def _reason(obligation: Obligation, bindings: Bindings) -> str:

@@ -26,7 +26,7 @@ def test_write_bindings_round_trips(tmp_path):
     from nda_compiler.bindings import load_bindings
 
     b = load_bindings(path, graphs_dir=tmp_path)
-    assert b.matter == "atlas-grid-energy"
+    assert b.firm == "atlas-grid-energy"
     assert b.agent.id == "a1" and b.covered_folders == ["0005/70001/"]
 
 

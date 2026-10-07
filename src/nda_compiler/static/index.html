@@ -50,8 +50,19 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .page-head .right{display:flex;align-items:center;gap:12px;flex:none}
 .field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted-fg)}
 select.input{appearance:none;-webkit-appearance:none;height:40px;min-width:260px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237B8291' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding:0 40px 0 12px;font:inherit;color:var(--heading);box-shadow:var(--shadow-sm)}
-.linkbtn{align-self:flex-start;margin-top:4px;font-size:12px;color:var(--primary-700);padding:0}
-.linkbtn:hover{text-decoration:underline}
+.dd{position:relative}
+.ddbtn{display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;height:40px;min-width:280px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card);padding:0 36px 0 12px;font:inherit;color:var(--heading);box-shadow:var(--shadow-sm);position:relative}
+.ddbtn::after{content:"";position:absolute;right:14px;top:50%;width:7px;height:7px;border-right:2px solid var(--muted-fg);border-bottom:2px solid var(--muted-fg);transform:translateY(-70%) rotate(45deg)}
+.ddmenu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);padding:6px;z-index:20}
+.ddrow{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:6px;font-size:14px;color:var(--heading);cursor:pointer;text-align:left}
+.ddrow:hover,.ddrow:focus-visible{background:var(--muted)}
+.ddrow.on{background:var(--accent);color:var(--accent-fg)}
+.ddrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ddrow .del{flex:none;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:var(--muted-fg);opacity:0;transition:opacity .15s}
+.ddrow:hover .del{opacity:1}
+.ddrow .del:hover{background:var(--err-bg);color:var(--err-fg)}
+.ddsep{height:1px;background:var(--border);margin:6px 4px}
+.ddrow.create{color:var(--primary-700);font-weight:500}
 .live{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card);font-size:13px;color:var(--muted-fg);box-shadow:var(--shadow-sm)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
 .dot.off{background:var(--err)}.dot.wait{background:var(--warn)}
@@ -263,7 +274,12 @@ tr.held .cb{visibility:hidden}
       <p>Upload a non-disclosure agreement. Each clause the agent can be held to becomes a policy you review and apply.</p>
     </div>
     <div class="right">
-      <label class="field">Firm<select id="matter" class="input" aria-label="Firm"><option>loading…</option></select><button type="button" class="linkbtn" id="newfirm">+ Create firm from a contract</button></label>
+      <div class="field">Firm
+        <div class="dd" id="firmdd">
+          <button type="button" class="input ddbtn" id="firmbtn" aria-haspopup="listbox" aria-expanded="false"><span id="firmlabel">loading…</span></button>
+          <div class="ddmenu" id="firmmenu" role="listbox" hidden></div>
+        </div>
+      </div>
       <label class="field">OpenBox<span class="live"><span class="dot wait" id="livedot"></span><span id="livetxt">connecting…</span></span></label>
     </div>
   </div>
@@ -363,11 +379,30 @@ import * as THREE from 'three';
 const $ = id => document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let MATTER = new URLSearchParams(location.search).get('matter') || 'trial';
-(async () => { try { const ms = await (await fetch('/matters')).json();
-  $('matter').innerHTML = ms.map(m => `<option value="${m.id}" ${m.id===MATTER?'selected':''}>${m.label}</option>`).join('');
-  } catch { $('matter').innerHTML = `<option>${MATTER}</option>`; } })();
-$('matter').addEventListener('change', e => { const u = new URL(location); u.searchParams.set('matter', e.target.value); location.href = u; });
+let FIRM = new URLSearchParams(location.search).get('firm') || new URLSearchParams(location.search).get('matter') || 'trial';
+let FIRMS = [];
+async function loadFirms(){ try { FIRMS = await (await fetch('/firms')).json(); } catch { FIRMS = [{id: FIRM, label: FIRM}]; } renderFirms(); }
+function renderFirms(){
+  const cur = FIRMS.find(f => f.id === FIRM); $('firmlabel').textContent = cur ? cur.label : FIRM;
+  const menu = $('firmmenu'); menu.innerHTML = '';
+  FIRMS.forEach(f => { const row = document.createElement('div'); row.className = 'ddrow' + (f.id === FIRM ? ' on' : ''); row.setAttribute('role', 'option'); row.tabIndex = 0;
+    row.innerHTML = `<span class="nm">${esc(f.label)}</span><button type="button" class="del" title="Delete firm ${esc(f.id)}" aria-label="Delete firm ${esc(f.id)}"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg></button>`;
+    row.addEventListener('click', () => { const u = new URL(location); u.searchParams.delete('matter'); u.searchParams.set('firm', f.id); location.href = u; });
+    row.querySelector('.del').addEventListener('click', async e => { e.stopPropagation();
+      if (!confirm(`Delete firm "${f.label}"?\n\nThis removes its bindings from the Studio. Policies already applied on OpenBox stay as they are.`)) return;
+      const r = await fetch(`/firms/${encodeURIComponent(f.id)}`, { method: 'DELETE' }); if (!r.ok) { alert('Could not delete this firm.'); return; }
+      if (f.id === FIRM) { const u = new URL(location); u.searchParams.delete('firm'); u.searchParams.delete('matter'); location.href = u; } else loadFirms(); });
+    menu.appendChild(row); });
+  const sep = document.createElement('div'); sep.className = 'ddsep'; menu.appendChild(sep);
+  const create = document.createElement('div'); create.className = 'ddrow create'; create.tabIndex = 0; create.setAttribute('role', 'option');
+  create.innerHTML = `<svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M5 12h14M12 5v14"/></svg><span class="nm">Create firm from a contract</span>`;
+  create.addEventListener('click', () => { closeFirms(); openCreateFirm(); }); menu.appendChild(create);
+}
+function closeFirms(){ $('firmmenu').hidden = true; $('firmbtn').setAttribute('aria-expanded', 'false'); }
+$('firmbtn').addEventListener('click', () => { const open = $('firmmenu').hidden; $('firmmenu').hidden = !open; $('firmbtn').setAttribute('aria-expanded', String(open)); });
+document.addEventListener('click', e => { if (!$('firmdd').contains(e.target)) closeFirms(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFirms(); });
+loadFirms();
 
 /* ── dropzone backdrop: the OpenBox auth-panel gradient, slowly moving ── */
 const canvas = $('scene');
@@ -399,11 +434,11 @@ function renderGraph(gs){
 }
 function markBound(){}
 function renderPlatform(){}
-fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([]));
+fetch(`/agent-graph?firm=${FIRM}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([]));
 
 /* ── create firm ── */
 const dlg=$('dlg'); let FIRM_TOKEN=null;
-$('newfirm').addEventListener('click',()=>{dlg.classList.add('show');$('dlg-step1').hidden=false;$('dlg-step2').hidden=true;$('dlg-save').hidden=true;$('dlg-err1').textContent='';$('dlg-err2').textContent='';$('dlg-file').value='';$('dlg-drop').querySelector('b').textContent='Upload the contract';});
+function openCreateFirm(){dlg.classList.add('show');$('dlg-step1').hidden=false;$('dlg-step2').hidden=true;$('dlg-save').hidden=true;$('dlg-err1').textContent='';$('dlg-err2').textContent='';$('dlg-file').value='';$('dlg-drop').querySelector('b').textContent='Upload the contract';}
 $('dlg-cancel').addEventListener('click',()=>dlg.classList.remove('show'));
 dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.classList.remove('show');});
 $('dlg-file').addEventListener('change',async()=>{const f=$('dlg-file').files[0];if(!f)return;$('dlg-drop').classList.add('busy');$('dlg-drop').querySelector('b').textContent=`Reading ${f.name}…`;
@@ -422,10 +457,9 @@ $('dlg-save').addEventListener('click',async()=>{
   $('dlg-save').disabled=true;$('dlg-save').textContent='Creating…';
   let d;try{const r=await fetch('/firms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});d=await r.json();if(!r.ok)throw new Error(d.detail||'could not create the firm');}catch(e){$('dlg-err2').textContent=e.message;$('dlg-save').disabled=false;$('dlg-save').textContent='Create firm and compile';return;}
   dlg.classList.remove('show');$('dlg-save').disabled=false;$('dlg-save').textContent='Create firm and compile';
-  MATTER=d.matter;const u=new URL(location);u.searchParams.set('matter',MATTER);history.replaceState(null,'',u);
-  const ms=await (await fetch('/matters')).json();$('matter').innerHTML=ms.map(m=>`<option value="${m.id}" ${m.id===MATTER?'selected':''}>${m.label}</option>`).join('');
+  FIRM=d.firm;const u=new URL(location);u.searchParams.delete('matter');u.searchParams.set('firm',FIRM);history.replaceState(null,'',u);await loadFirms();
   draft=d;$('bar').style.width='100%';d.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.querySelector('em').textContent=' '+Math.round(x.ms)+' ms';}});
-  $('s-clauses').textContent=d.coverage.clauses;$('s-policies').textContent=d.controls.length;$('p-sub').textContent=`Firm ${MATTER} created · ${d.controls.length} policies from its contract. Nothing is created on OpenBox until you apply.`;
+  $('s-clauses').textContent=d.coverage.clauses;$('s-policies').textContent=d.controls.length;$('p-sub').textContent=`Firm ${FIRM} created · ${d.controls.length} policies from its contract. Nothing is created on OpenBox until you apply.`;
   if(d.graphs&&d.graphs.length)renderGraph(d.graphs);render(d);loadState();
 });
 
@@ -444,16 +478,16 @@ function setStage(s){const k=ORDER.indexOf(s);document.querySelectorAll('.stage'
 async function read(f){
   $('p-sub').textContent=`Reading ${f.name}…`; setStage('map');
   let i=0; const tick=setInterval(()=>{i=Math.min(i+1,ORDER.length-1);setStage(ORDER[i]);},900);
-  const fd=new FormData(); fd.append('nda',f); fd.append('matter',MATTER);
+  const fd=new FormData(); fd.append('nda',f); fd.append('firm',FIRM);
   const t0=performance.now(); let res,body;
   try{res=await fetch('/propose',{method:'POST',body:fd});body=await res.json();}catch{clearInterval(tick);return fail('The compiler is not reachable. Start nda-web and try again.');}
   clearInterval(tick);
   if(!res.ok) return fail(body.detail||'The file could not be read as an NDA.');
   draft=body; $('bar').style.width='100%';
-  if(body.matter_switched){MATTER=body.matter;$('matter').value=MATTER;const u=new URL(location);u.searchParams.set('matter',MATTER);history.replaceState(null,'',u);loadState();}
+  if(body.firm_switched){FIRM=body.firm;const u=new URL(location);u.searchParams.delete('matter');u.searchParams.set('firm',FIRM);history.replaceState(null,'',u);renderFirms();loadState();}
   body.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.classList.remove('on');el.querySelector('em').textContent=' '+Math.round(x.ms)+' ms';}});
   $('s-clauses').textContent=body.coverage.clauses; $('s-policies').textContent=body.controls.length;
-  $('p-sub').textContent=`${f.name} · ${body.controls.length} policies in ${((performance.now()-t0)/1000).toFixed(1)} s${body.matter_switched?` · matter switched to ${body.matter}: the document names that party`:''}. Nothing is created on OpenBox until you apply.`;
+  $('p-sub').textContent=`${f.name} · ${body.controls.length} policies in ${((performance.now()-t0)/1000).toFixed(1)} s${body.firm_switched?` · firm switched to ${body.firm}: the document names that party`:''}. Nothing is created on OpenBox until you apply.`;
   if(body.graphs&&body.graphs.length)renderGraph(body.graphs); renderPlatform(body.platform);
   render(body); markBound(body.controls);
 }
@@ -509,7 +543,7 @@ function row(o){const e=document.createElement('div');e.className='row '+(o.stat
   <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="when">${o.when?esc(o.when):''}</span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}${o.href?`<a class="open" href="${o.href}" target="_blank" rel="noopener">Open in OpenBox<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>`:''}`;
   if(o.opa)e.classList.add('opa'); return e;}
 async function loadState(){
-  try{const r=await fetch(`/openbox/state?matter=${MATTER}`);const s=await r.json();
+  try{const r=await fetch(`/openbox/state?firm=${FIRM}`);const s=await r.json();
     $('livetxt').textContent=s.backend; $('livedot').className='dot';
     $('sidesub').textContent=`Agent: ${s.agent_name} · ${s.items.length} active, ${s.items.filter(i=>i.opa_loaded).length} synced to OPA`; $('s-active').textContent=s.items.length;
     // Rows applied from this page stay until OpenBox lists them by name, so a

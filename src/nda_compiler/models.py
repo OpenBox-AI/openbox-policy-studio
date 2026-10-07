@@ -114,7 +114,7 @@ class StageTiming(BaseModel):
 
 
 class CompileReport(BaseModel):
-    matter: str
+    firm: str
     source: str
     clauses: list[Clause]
     classifications: list[Classification]

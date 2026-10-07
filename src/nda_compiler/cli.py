@@ -22,7 +22,7 @@ from .openbox_api import backend_from_env
 
 def render(report: CompileReport, console: Console) -> None:
     names = {}
-    table = Table(title=f"NDA → OpenBox controls · {report.matter}")
+    table = Table(title=f"NDA → OpenBox controls · {report.firm}")
     table.add_column("§")
     table.add_column("Kind")
     table.add_column("Control")

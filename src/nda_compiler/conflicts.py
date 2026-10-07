@@ -37,14 +37,14 @@ def _tool_condition(conditions: list[dict[str, Any]]) -> str | None:
     return None
 
 
-def _same_matter(rule_name: str, matter: str) -> bool:
-    return rule_name.startswith(f"NDA {matter} ")
+def _same_firm(rule_name: str, firm: str) -> bool:
+    return rule_name.startswith(f"NDA {firm} ")
 
 
-def check(controls: list[Control], existing: list[ExistingRule], matter: str) -> list[Control]:
+def check(controls: list[Control], existing: list[ExistingRule], firm: str) -> list[Control]:
     """Annotate controls that collide with another firm's rules on this agent."""
 
-    others = [r for r in existing if r.is_active and not _same_matter(r.rule_name, matter)]
+    others = [r for r in existing if r.is_active and not _same_firm(r.rule_name, firm)]
     out = []
     for control in controls:
         notes: list[str] = []

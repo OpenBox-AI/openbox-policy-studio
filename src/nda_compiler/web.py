@@ -54,8 +54,10 @@ async def index() -> str:
     return (_STATIC / "index.html").read_text(encoding="utf-8")
 
 
-@app.get("/matters")
-async def matters() -> JSONResponse:
+@app.get("/firms")
+async def firms() -> JSONResponse:
+    """The firms this Studio knows, one bindings file each."""
+
     out = []
     for path in sorted(BINDINGS_DIR.glob("*.yaml")):
         try:
@@ -67,10 +69,10 @@ async def matters() -> JSONResponse:
 
 
 @app.get("/openbox/state")
-async def openbox_state(matter: str = "trial") -> JSONResponse:
-    """What is enforced on the matter's agent(s) right now, straight from OpenBox."""
+async def openbox_state(firm: str = "trial") -> JSONResponse:
+    """What is enforced on the firm's agent right now, straight from OpenBox."""
 
-    bindings = load_bindings(BINDINGS_DIR / f"{matter}.yaml")
+    bindings = load_bindings(BINDINGS_DIR / f"{firm}.yaml")
     base = os.environ.get("OPENBOX_BACKEND_URL", "http://localhost:3000").rstrip("/")
     key = os.environ.get("OPENBOX_ORG_API_KEY", "").strip()
     opa = os.environ.get("OPA_URL", "http://localhost:8181").rstrip("/")
@@ -267,12 +269,12 @@ async def _services(bindings) -> Services:
 
 
 @app.get("/agent-graph")
-async def agent_graph(matter: str = "trial") -> JSONResponse:
-    """The matter's agents' graphs with live observations folded in and tool roles judged."""
+async def agent_graph(firm: str = "trial") -> JSONResponse:
+    """The firm's agent graph with live observations folded in and tool roles judged."""
 
-    bindings_path = BINDINGS_DIR / f"{matter}.yaml"
+    bindings_path = BINDINGS_DIR / f"{firm}.yaml"
     if not bindings_path.exists():
-        raise HTTPException(404, f"unknown matter {matter}")
+        raise HTTPException(404, f"unknown firm {firm}")
     bindings = load_bindings(bindings_path)
     services = await _services(bindings)
     for agent_id, graph in list(bindings.graphs.items()):
@@ -280,10 +282,10 @@ async def agent_graph(matter: str = "trial") -> JSONResponse:
     return JSONResponse({"graphs": _graph_json(bindings), "platform": _platform_json(services)})
 
 
-def _detect_matter(text: str, chosen: str) -> str:
-    """The matter whose Disclosing Party the document names, else the chosen one.
+def _detect_firm(text: str, chosen: str) -> str:
+    """The firm whose Disclosing Party the document names, else the chosen one.
 
-    Compiling an NDA under the wrong matter binds it to the wrong folders and
+    Compiling an NDA under the wrong firm binds it to the wrong folders and
     codenames, so the document's own party names win over the dropdown.
     """
 
@@ -401,17 +403,28 @@ async def create_firm(req: FirmRequest) -> JSONResponse:
     return await _compile(source, profile.slug, profile.slug)
 
 
+@app.delete("/firms/{slug}")
+async def delete_firm(slug: str) -> JSONResponse:
+    """Remove a firm's bindings. Rules already on OpenBox are left as they are."""
+
+    path = BINDINGS_DIR / f"{slug}.yaml"
+    if not path.exists() or "/" in slug or slug.startswith("."):
+        raise HTTPException(404, f"unknown firm {slug}")
+    path.unlink()
+    return JSONResponse({"deleted": slug})
+
+
 @app.post("/propose")
-async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONResponse:
-    if not (BINDINGS_DIR / f"{matter}.yaml").exists():
-        raise HTTPException(404, f"unknown matter {matter}")
+async def propose(nda: UploadFile = File(...), firm: str = Form(...)) -> JSONResponse:
+    if not (BINDINGS_DIR / f"{firm}.yaml").exists():
+        raise HTTPException(404, f"unknown firm {firm}")
     source = await _save_upload(nda)
     from . import pdf as _pdf
 
-    return await _compile(source, _detect_matter(_pdf.read_text(source), matter), matter)
+    return await _compile(source, _detect_firm(_pdf.read_text(source), firm), firm)
 
 
-async def _compile(source: Path, detected: str, matter: str) -> JSONResponse:
+async def _compile(source: Path, detected: str, firm: str) -> JSONResponse:
     bindings = load_bindings(BINDINGS_DIR / f"{detected}.yaml")
     services = await _services(bindings)
     try:
@@ -431,8 +444,8 @@ async def _compile(source: Path, detected: str, matter: str) -> JSONResponse:
     _DRAFTS[draft_id] = (report, detected)
     body = _report_json(report, bindings, services)
     body["draft_id"] = draft_id
-    body["matter"] = detected
-    body["matter_switched"] = detected != matter
+    body["firm"] = detected
+    body["firm_switched"] = detected != firm
     return JSONResponse(body)
 
 
@@ -441,7 +454,7 @@ async def apply(req: ApplyRequest) -> JSONResponse:
     entry = _DRAFTS.get(req.draft_id)
     if entry is None:
         raise HTTPException(404, "draft expired; read the NDA again")
-    report, _matter = entry
+    report, _firm = entry
     chosen = [(i, report.controls[i]) for i in req.selected if 0 <= i < len(report.controls)]
     backend = backend_from_env()
     try:

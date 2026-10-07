@@ -224,7 +224,7 @@ def build_graph(services: Services):
         controls = [
             c
             for agent_id, group in by_agent.items()
-            for c in conflicts.check(group, services.platform.rules_for(agent_id), services.bindings.matter)
+            for c in conflicts.check(group, services.platform.rules_for(agent_id), services.bindings.firm)
         ]
         # Every field a rule uses must be one OPA actually sees.
         for control in controls:
@@ -305,7 +305,7 @@ async def compile_nda(source: Path, services: Services, graph=None) -> CompileRe
     graph = graph or build_graph(services)
     state = await graph.ainvoke({"source": str(source)})
     return CompileReport(
-        matter=services.bindings.matter,
+        firm=services.bindings.firm,
         source=str(source),
         clauses=state["clauses"],
         classifications=state["classifications"],

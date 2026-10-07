@@ -39,7 +39,7 @@ class ToolMap(BaseModel):
 
 
 class Bindings(BaseModel):
-    matter: str
+    firm: str
     disclosing_party: str
     disclosing_party_aliases: list[str] = Field(default_factory=list)
     receiving_party: str = ""
