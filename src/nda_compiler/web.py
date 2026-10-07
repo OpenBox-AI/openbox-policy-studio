@@ -15,6 +15,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import httpx
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -42,64 +43,74 @@ class ApplyRequest(BaseModel):
     selected: list[int]
 
 
-_PAGE = """<!doctype html><html><head><meta charset="utf-8"><title>NDA Policies</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-:root{--bg:#fff;--fg:#111;--mut:#666;--line:#e5e5e5;--ok:#1a7f37;--warn:#b35900;--bad:#b3261e;--acc:#1d4ed8}
-@media (prefers-color-scheme:dark){:root{--bg:#111;--fg:#eee;--mut:#999;--line:#333;--acc:#60a5fa}}
-body{margin:0;padding:24px 16px;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui}
-main{max-width:1100px;margin:auto}h1{font-size:22px;margin:0 0 4px}p.sub{color:var(--mut);margin:0 0 16px}
-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
-button[disabled]{opacity:.5;cursor:default}
-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
-td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.mut{color:var(--mut)}
-.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:0 8px;font-size:12px;color:var(--mut)}
-#cov{margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:8px}
-#bar{display:flex;gap:12px;align-items:center;margin-top:12px}
-</style></head><body><main>
-<h1>NDA → OpenBox policies</h1>
-<p class="sub">Upload the NDA. Review what it would enforce. Tick what you want. Apply.</p>
-<form id="f"><input type="file" name="nda" required>
-<select name="matter">__MATTERS__</select><button>Read NDA</button><span id="t" class="mut"></span></form>
-<div id="cov" hidden></div>
-<table id="r"></table>
-<div id="bar" hidden><button id="apply">Apply selected</button><span id="s" class="mut"></span></div>
-<script>
-const $=id=>document.getElementById(id);let draft=null;
-$('f').onsubmit=async e=>{e.preventDefault();$('t').textContent='reading…';$('r').innerHTML='';$('cov').hidden=true;$('bar').hidden=true;
-const s=performance.now();const res=await fetch('/propose',{method:'POST',body:new FormData($('f'))});const d=await res.json();
-if(!res.ok){$('t').textContent=d.detail||'failed';return}
-draft=d;$('t').textContent=`${Math.round(performance.now()-s)} ms · `+d.timings.map(x=>`${x.stage} ${Math.round(x.ms)}ms`).join(' · ');
-const c=d.coverage;const held=d.review.filter(x=>x.includes('ungrounded'));
-$('cov').hidden=false;$('cov').innerHTML=`<b>${c.clauses}</b> clauses · <b>${d.controls.length}</b> policies available · <b class=mut>${c.not_enforceable}</b> outside runtime scope (term, return/destroy, governing law)`
-+(held.length?`<div class=warn style="margin-top:6px">Needs a human: ${held.map(x=>x.replace('ungrounded values','extraction paraphrased the clause —')).join('; ')}</div>`:'');
-const q={};d.clauses.forEach(x=>q[x.id]=x);
-$('r').innerHTML='<tr><th></th><th>Clause</th><th>Policy</th><th>Kind</th><th>Judge</th><th>Status</th></tr>'+d.controls.map((x,i)=>{
-const cl=q[x.clause_id];const chk=x.verify_probability>=0.8?'checked':'';
-return `<tr><td><input type=checkbox data-i=${i} ${chk}></td>
-<td><b>§${x.clause_id} ${cl.heading}</b><br><span class=mut>${cl.text}</span></td>
-<td>${x.description}</td><td><span class=pill>${x.type.replace('_',' ')}</span></td>
-<td>${x.verify_probability!=null?x.verify_probability.toFixed(2):'-'}</td><td id=st${i} class=mut>proposed</td></tr>`}).join('');
-$('bar').hidden=false;$('s').textContent='';};
-$('apply').onclick=async()=>{const sel=[...document.querySelectorAll('input[type=checkbox]:checked')].map(b=>+b.dataset.i);
-if(!sel.length){$('s').textContent='nothing selected';return}
-$('apply').disabled=true;$('s').textContent=`applying ${sel.length}…`;const s=performance.now();
-const res=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft_id:draft.draft_id,selected:sel})});
-const d=await res.json();$('apply').disabled=false;
-if(!res.ok){$('s').textContent=d.detail||'failed';return}
-d.results.forEach(r=>{const el=$('st'+r.index);el.textContent=r.status+(r.note?' · '+r.note:'');el.className=r.status==='active'?'ok':r.status==='failed'?'bad':'warn'});
-$('s').textContent=`${d.results.filter(r=>r.status==='active').length}/${sel.length} active on OpenBox · ${Math.round(performance.now()-s)} ms`};
-</script></main></body></html>"""
+_STATIC = Path(__file__).parent / "static"
 
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    options = "".join(
-        f'<option value="{p.stem}">{p.stem}</option>' for p in sorted(BINDINGS_DIR.glob("*.yaml"))
+    return (_STATIC / "index.html").read_text(encoding="utf-8")
+
+
+@app.get("/openbox/state")
+async def openbox_state(matter: str = "trial") -> JSONResponse:
+    """What is enforced on the matter's agent(s) right now, straight from OpenBox."""
+
+    bindings = load_bindings(BINDINGS_DIR / f"{matter}.yaml")
+    base = os.environ.get("OPENBOX_BACKEND_URL", "http://localhost:3000").rstrip("/")
+    key = os.environ.get("OPENBOX_ORG_API_KEY", "").strip()
+    opa = os.environ.get("OPA_URL", "http://localhost:8181").rstrip("/")
+    items: list[dict[str, Any]] = []
+    async with httpx.AsyncClient(timeout=10) as client:
+        for agent in bindings.all_agents:
+            opa_raw = ""
+            try:
+                policies = (await client.get(f"{opa}/v1/policies")).json().get("result", [])
+                opa_raw = "".join(
+                    p.get("raw", "")
+                    for p in policies
+                    if agent.id.replace("-", "") in p.get("id", "")
+                )
+            except Exception:
+                pass
+            for kind, path, name_key in (
+                ("access rule", "policy-rule", "rule_name"),
+                ("sequence rule", "behavior-rule", "rule_name"),
+                ("output scan", "guardrails", "name"),
+            ):
+                if not key:
+                    continue
+                try:
+                    r = await client.get(
+                        f"{base}/agent/{agent.id}/{path}",
+                        headers={"X-API-Key": key},
+                        params={"limit": 200},
+                    )
+                    page = r.json().get("data", {})
+                    rows = page.get("data", page) if isinstance(page, dict) else page
+                except Exception:
+                    rows = []
+                for row in rows or []:
+                    if row.get("is_active") is False or row.get("is_current_version") is False:
+                        continue
+                    name = row.get(name_key, "")
+                    clause = name.split("§")[1].split(" ")[0] if "§" in name else ""
+                    items.append(
+                        {
+                            "id": row.get("id"),
+                            "name": name,
+                            "kind": kind,
+                            "clause": f"§{clause}" if clause else "",
+                            "agent": agent.name,
+                            "opa_loaded": bool(row.get("id") and row["id"] in opa_raw),
+                        }
+                    )
+    return JSONResponse(
+        {
+            "agent_name": ", ".join(a.name for a in bindings.all_agents),
+            "backend": base.replace("http://", "").replace("https://", ""),
+            "items": items,
+        }
     )
-    return _PAGE.replace("__MATTERS__", options)
 
 
 def _report_json(report: CompileReport, bindings) -> dict[str, Any]:

@@ -35,6 +35,7 @@ nda-web = "nda_compiler.web:run"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nda_compiler"]
+include = ["src/nda_compiler/static/*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
