@@ -36,6 +36,8 @@ BINDINGS_DIR = Path(os.environ.get("BINDINGS_DIR", "bindings"))
 
 # Drafts live for the life of the process; this is a single-officer trial.
 _DRAFTS: dict[str, tuple[CompileReport, str]] = {}
+# Applied runtime judgements per matter (OpenBox has no endpoint for them).
+_JUDGEMENTS: dict[str, list] = {}
 
 
 class ApplyRequest(BaseModel):
@@ -116,6 +118,22 @@ async def openbox_state(matter: str = "trial") -> JSONResponse:
                             "opa_loaded": bool(row.get("id") and row["id"] in opa_raw),
                         }
                     )
+    # Runtime judgements live in the harness, not on OpenBox; list the ones
+    # the officer applied so the panel reflects every decision taken here.
+    for control in _JUDGEMENTS.get(matter, []):
+        names = {a.id: a.name for a in bindings.all_agents}
+        items.append(
+            {
+                "id": f"judgement-{control.clause_id}-{control.agent_id}",
+                "name": control.payload["rule_name"],
+                "kind": "judgement",
+                "clause": f"§{control.clause_id}",
+                "agent": names.get(control.agent_id, control.agent_id),
+                "opa_loaded": False,
+                "note": "Asked of the judge at runtime by the agent harness; "
+                "OpenBox has no store for judgement rules yet.",
+            }
+        )
     # A rule being replaced can briefly list two current versions; show one.
     seen: set[tuple[str, str]] = set()
     items = [
@@ -251,6 +269,10 @@ async def apply(req: ApplyRequest) -> JSONResponse:
     results = []
     for (index, _), control in zip(chosen, applied, strict=True):
         report.controls[index] = control
+        if control.type == "judgement" and control.status == "active":
+            kept = _JUDGEMENTS.setdefault(_matter, [])
+            kept[:] = [c for c in kept if c.payload["rule_name"] != control.payload["rule_name"]]
+            kept.append(control)
         results.append(
             {
                 "index": index,
