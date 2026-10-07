@@ -383,7 +383,7 @@ async function read(f){
 function fail(msg){$('bar').style.width='0';document.querySelectorAll('.stage').forEach(d=>d.classList.remove('on'));$('p-sub').textContent=msg;drop.querySelector('h3').textContent='Try again';}
 
 /* ── proposals table ── */
-const KIND={policy_rule:['access','Access rule'],behavior_rule:['sequence','Sequence rule'],guardrail:['scan','Output scan'],judgement:['judge','Judgement']};
+const KIND={policy_rule:['access','Access rule'],behavior_rule:['sequence','Sequence rule'],guardrail:['scan','Output scan']};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function bindCell(b){
   if(!b||!b.tool)return '<span class="bind">—</span>';
@@ -420,7 +420,7 @@ function render(d){
   const scope=d.classifications.filter(c=>c.kind==='not_enforceable').map(c=>byId[c.clause_id]);
   const sc=$('scope'); let html='';
   if(scope.length)html+=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${esc(c.id)} ${esc(c.heading)}</span>`).join('');
-  (d.not_applicable||[]).forEach(n=>{const m=n.match(/^§([\d.]+)/);html+=`<span class="why"><span class="badge na">§${m?m[1]:''} not applicable to this agent</span> ${esc(n.replace(/^§[\d.]+[^:]*:\s*/,''))}</span>`;});
+  (d.not_applicable||[]).forEach(n=>{const m=n.match(/^§([\d.]+)/);html+=`<span class="why"><span class="badge na">§${m?m[1]:''} no platform policy</span> ${esc(n.replace(/^§[\d.]+[^:]*:\s*/,''))}</span>`;});
   sc.innerHTML=html;
   drop.hidden=true; $('tablewrap').hidden=false; $('act').hidden=false; $('reset').hidden=false; updateCount();
 }
@@ -431,7 +431,7 @@ $('reset').addEventListener('click',()=>location.reload());
 
 /* ── enforced panel ── */
 const ledger=$('ledger');
-const KB={'access rule':['access','Access'],'sequence rule':['sequence','Sequence'],'output scan':['scan','Scan'],'judgement':['judge','Judgement']};
+const KB={'access rule':['access','Access'],'sequence rule':['sequence','Sequence'],'output scan':['scan','Scan']};
 function row(o){const e=document.createElement('div');e.className='row '+(o.status||'');e.id=o.key||'';
   e.innerHTML=`<div class="t"><span class="nm" title="${esc(o.name)}">${esc(o.name)}</span><span class="badge ${o.bc||'na'}">${esc(o.kind||'')}</span></div>
   <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}`;
@@ -464,8 +464,8 @@ $('apply').addEventListener('click',async()=>{
   if(!r.ok){pending.forEach(p=>setRow(p.e,'failed',d.detail||'Apply failed'));$('sub').textContent='Could not apply';return;}
   d.results.forEach(res=>{const p=pending.find(p=>p.i===res.index);if(p)setRow(p.e,res.status,res.note);});
   rows=rows.filter(r=>r.style.display!=='none'); updateCount();
-  const stored=d.results.filter(x=>x.status==='active'&&x.remote_id).length, judged=d.results.filter(x=>x.status==='active'&&!x.remote_id).length, failed=d.results.filter(x=>x.status!=='active').length;
-  $('sub').textContent=[stored?`${stored} active on OpenBox`:'',judged?`${judged} runtime judgement${judged>1?'s':''} held by the harness`:'',failed?`${failed} not applied`:''].filter(Boolean).join(' · ');
+  const stored=d.results.filter(x=>x.status==='active').length, failed=d.results.length-stored;
+  $('sub').textContent=[stored?`${stored} active on OpenBox`:'',failed?`${failed} not applied`:''].filter(Boolean).join(' · ');
   await loadState(); [10000,25000,40000].forEach(ms=>setTimeout(loadState,ms));
 });
 function setRow(e,status,note){e.className='row '+status;const b=e.querySelector('.st .badge');b.className='badge '+status;b.querySelector('.s').textContent=status==='active'?'Active':status==='failed'?'Not applied':status;

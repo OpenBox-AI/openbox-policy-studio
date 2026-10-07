@@ -43,7 +43,7 @@ def render(report: CompileReport, console: Console) -> None:
     coverage = report.coverage
     console.print(
         f"[bold]Coverage[/bold]: {coverage['clauses']} clauses · "
-        f"{coverage['enforced']} enforced at runtime · {coverage['judgement']} under judgement · "
+        f"{coverage['enforced']} platform policies · {coverage['not_applicable']} not applicable to the agent · "
         f"{coverage['not_enforceable']} outside runtime scope · {coverage['review']} for review"
     )
     for item in report.review:

@@ -36,10 +36,6 @@ class RecordingBackend:
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
 
     async def apply(self, control: Control) -> Control:
-        if control.type == "judgement":
-            return control.model_copy(
-                update={"status": "active", "note": "runtime judgement, evaluated by harness"}
-            )
         path = {
             "policy_rule": f"/agent/{control.agent_id}/policy-rule",
             "behavior_rule": f"/agent/{control.agent_id}/behavior-rule",
@@ -71,11 +67,7 @@ class HttpBackend:
                 return await self._policy_rule(control)
             if control.type == "behavior_rule":
                 return await self._behavior_rule(control)
-            if control.type == "guardrail":
-                return await self._guardrail(control)
-            return control.model_copy(
-                update={"status": "active", "note": "runtime judgement, evaluated by harness"}
-            )
+            return await self._guardrail(control)
         except httpx.HTTPStatusError as exc:
             body = exc.response.text[:300]
             return control.model_copy(

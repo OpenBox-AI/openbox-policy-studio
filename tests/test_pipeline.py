@@ -64,9 +64,11 @@ async def test_compile_emits_grounded_controls(services):
     assert "§2" in rule["reason"]
     assert all(c.status == "active" for c in report.controls)
 
-    judgement = [c for c in report.controls if c.type == "judgement"]
-    assert judgement
-    assert "integration risk" in judgement[0].payload["question"]["instructions"]["purpose"]
+    # Only platform policy types are ever proposed; the Purpose clause is
+    # reported as not applicable rather than turned into something OpenBox
+    # cannot store.
+    assert {c.type for c in report.controls} <= {"policy_rule", "behavior_rule", "guardrail"}
+    assert any("use restriction" in n for n in report.not_applicable)
 
     calls = services.backend.calls
     assert any(path.endswith("/evaluate") for _, path, _ in calls)

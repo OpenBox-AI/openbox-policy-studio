@@ -74,7 +74,8 @@ class Obligation(BaseModel):
     ungrounded: list[str] = Field(default_factory=list)
 
 
-ControlType = Literal["policy_rule", "behavior_rule", "guardrail", "judgement"]
+# Exactly the three things OpenBox stores for an agent. Nothing else is proposed.
+ControlType = Literal["policy_rule", "behavior_rule", "guardrail"]
 
 
 class TestCase(BaseModel):
@@ -126,8 +127,8 @@ class CompileReport(BaseModel):
             by_kind[c.kind.value] = by_kind.get(c.kind.value, 0) + 1
         return {
             "clauses": len(self.clauses),
-            "enforced": sum(1 for c in self.controls if c.type != "judgement"),
-            "judgement": sum(1 for c in self.controls if c.type == "judgement"),
+            "enforced": len(self.controls),
+            "not_applicable": len(self.not_applicable),
             "not_enforceable": by_kind.get(ControlKind.NOT_ENFORCEABLE.value, 0),
             "review": len(self.review),
         }

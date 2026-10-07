@@ -203,6 +203,12 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
                 f"sends outside the firm (graph: {path}). Its only way to move material is "
                 f"{filing}, which the access rules already scope to the covered folder."
             )
+    if obligation.kind == ControlKind.USE_RESTRICTION:
+        notes.append(
+            f"§{obligation.clause_id} use restriction: whether a task serves the Purpose is not "
+            f"a condition OpenBox can check on a tool call, a span or an output, so no policy "
+            f"is proposed. The access rules keep the material to the covered folder."
+        )
     if obligation.kind == ControlKind.PERMITTED_RECIPIENTS:
         for agent in bindings.other_agents:
             readers = [t for t in bindings.tools_for(agent).access if t.document_arg is None]
@@ -286,62 +292,14 @@ def personal_data(obligation: Obligation, bindings: Bindings) -> list[Control]:
     ]
 
 
-def use_restriction(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    """A judgement question the harness asks JEV at runtime, carrying the Purpose."""
-
-    purpose = obligation.purpose or bindings.purpose
-    # "solely for the Purpose" quotes the defined term, not its definition;
-    # the matter's bindings carry the definition.
-    if purpose and len(purpose.split()) <= 3 and "purpose" in purpose.lower():
-        purpose = bindings.purpose
-    if not purpose:
-        return []
-    controls = []
-    for agent in bindings.all_agents:
-        reads = bindings.tools_for(agent).read
-        if not reads:
-            continue
-        controls.append(
-            Control(
-                clause_id=obligation.clause_id,
-                kind=obligation.kind,
-                type="judgement",
-                agent_id=agent.id,
-                payload={
-                    "rule_name": _rule_name("use within Purpose", obligation, bindings),
-                    "triggers": ["llm_tool_call"],
-                    "trigger_match": [
-                        {"field": "tool_name", "op": "in", "value": [r.name for r in reads]}
-                    ],
-                    "question": {
-                        "type": "noul",
-                        "instructions": {
-                            "what": "Is this use of the Disclosing Party's Confidential "
-                            "Information outside the Purpose defined in the NDA?",
-                            "purpose": purpose,
-                            "true": "The task the agent is performing serves another client, "
-                            "benchmarking, marketing or any aim other than the Purpose.",
-                            "false": "The task is a step in " + purpose + ".",
-                        },
-                    },
-                    "model": "jev-latest",
-                    "block_above": 0.7,
-                    "verdict": VERDICT_BLOCK,
-                    "reject_message": _reason(obligation, bindings),
-                    "on_unavailable": "block",
-                },
-                binding={**_binding(reads[0], reads[0].document_arg), "tools": [r.name for r in reads]},
-            )
-        )
-    return controls
-
-
 TEMPLATES = {
     ControlKind.PERMITTED_RECIPIENTS: permitted_recipients,
     ControlKind.THIRD_PARTY_DISCLOSURE: third_party_disclosure,
     ControlKind.MARKED_MATERIAL: marked_material,
     ControlKind.PERSONAL_DATA: personal_data,
-    ControlKind.USE_RESTRICTION: use_restriction,
+    # USE_RESTRICTION ("solely for the Purpose") has no platform policy: whether
+    # a task serves the Purpose is not a condition on a tool call, a span or an
+    # output. It is reported under not_applicable, never invented.
 }
 
 
@@ -382,23 +340,15 @@ def describe(control: Control, bindings: Bindings) -> str:
             f"minutes, its '{b.get('tool')}' tool (which sends content outside the firm's "
             f"systems) is blocked."
         )
-    if control.type == "guardrail":
-        if p["guardrail_type"] == GUARDRAIL_PII:
-            return (
-                f"Every output agent {agent} produces is scanned for personal data (names, "
-                f"email addresses, phone numbers, card numbers); any output containing such "
-                f"personal data is blocked before delivery."
-            )
+    if p["guardrail_type"] == GUARDRAIL_PII:
         return (
-            f"Every output agent {agent} produces is scanned for the confidential markings "
-            f"{p['params']['banned_words']}; any output containing one is blocked before delivery."
+            f"Every output agent {agent} produces is scanned for personal data (names, "
+            f"email addresses, phone numbers, card numbers); any output containing such "
+            f"personal data is blocked before delivery."
         )
-    purpose = p["question"]["instructions"]["purpose"]
-    tools = ", ".join(b.get("tools", []))
     return (
-        f"Whenever agent {agent} reads a {party} document with {tools}, an independent judge "
-        f"is asked whether the task being performed falls outside the Purpose ('{purpose}'); "
-        f"if the probability that it does exceeds {p['block_above']}, the read is blocked."
+        f"Every output agent {agent} produces is scanned for the confidential markings "
+        f"{p['params']['banned_words']}; any output containing one is blocked before delivery."
     )
 
 
