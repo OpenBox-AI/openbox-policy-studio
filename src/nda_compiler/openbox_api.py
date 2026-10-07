@@ -66,9 +66,35 @@ class HttpBackend:
             )
 
     async def _policy_rule(self, control: Control) -> Control:
+        """Create the rule, or version it if a rule with this name already exists.
+
+        OpenBox keeps a rule's history under one base_rule_id: PUT on the
+        current version writes a new version and retires the old one, and the
+        Policies tab shows the lineage. An existing rule whose conditions and
+        decision already match is left alone and reported as unchanged.
+        """
+
         base = f"/agent/{control.agent_id}/policy-rule"
-        await self._retire_same_name(base, control.payload["rule_name"])
-        created = _unwrap((await self._post(base, control.payload)).json())
+        existing = await self._current_by_name(base, control.payload["rule_name"])
+        if existing is not None and _same_rule(existing, control.payload):
+            if not existing.get("is_active"):
+                await self._client.put(f"{base}/{existing['id']}/status", json={"is_active": True})
+            return control.model_copy(
+                update={
+                    "status": "active",
+                    "remote_id": existing["id"],
+                    "note": "already on OpenBox with these conditions; left unchanged",
+                }
+            )
+        if existing is not None:
+            body = {**control.payload, "change_log": f"Recompiled from the NDA: {control.payload['reason'][:160]}"}
+            response = await self._client.put(f"{base}/{existing['id']}", json=body)
+            response.raise_for_status()
+            created = _unwrap(response.json())
+            note = f"new version of an existing rule (was {existing['id'][:8]})"
+        else:
+            created = _unwrap((await self._post(base, control.payload)).json())
+            note = ""
         version_id = created.get("id") or created.get("rule_version_id")
         for test in control.tests:
             result = _unwrap(
@@ -84,19 +110,18 @@ class HttpBackend:
                     }
                 )
         await self._client.put(f"{base}/{version_id}/status", json={"is_active": True})
-        return control.model_copy(update={"status": "active", "remote_id": version_id})
+        return control.model_copy(update={"status": "active", "remote_id": version_id, "note": note})
 
-    async def _retire_same_name(self, base: str, rule_name: str) -> None:
-        """Re-compiling an NDA replaces its rules instead of stacking duplicates."""
-
+    async def _current_by_name(self, base: str, rule_name: str) -> dict[str, Any] | None:
         response = await self._client.get(base, params={"limit": 200})
         if response.status_code >= 300:
-            return
+            return None
         page = _unwrap(response.json())
         rules = page.get("data", page) if isinstance(page, dict) else page
         for rule in rules or []:
             if rule.get("rule_name") == rule_name and rule.get("is_current_version", True):
-                await self._client.delete(f"{base}/{rule['id']}")
+                return rule
+        return None
 
     async def _post(self, path: str, body: dict[str, Any]) -> httpx.Response:
         response = await self._client.post(path, json=body)
@@ -137,6 +162,23 @@ async def fetch_activity_events(
             if isinstance(page, dict) and start >= int(page.get("total", 0)):
                 break
     return events
+
+
+def _same_rule(existing: dict[str, Any], payload: dict[str, Any]) -> bool:
+    """Same decision, match mode, priority and conditions (ignoring condition ids)."""
+
+    def strip(conditions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return sorted(
+            ({k: v for k, v in c.items() if k != "id"} for c in conditions),
+            key=lambda c: str(c),
+        )
+
+    return (
+        existing.get("decision") == payload["decision"]
+        and existing.get("match_mode") == payload["match_mode"]
+        and int(existing.get("priority", -1)) == payload["priority"]
+        and strip(existing.get("conditions", [])) == strip(payload["conditions"])
+    )
 
 
 def _unwrap(body: Any) -> Any:
