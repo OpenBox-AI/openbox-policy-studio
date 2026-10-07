@@ -266,17 +266,24 @@ def observe(events: list[dict[str, Any]], graph: AgentGraph) -> AgentGraph:
     """
 
     graph = graph.model_copy(deep=True)
+    # The backend stores one tool start several times (one row per attempt
+    # and per hook), so calls are counted by activity id, not by row.
+    counted: set[tuple[str, str]] = set()
     for event in events:
         if event.get("event_type") != "ActivityStarted":
             continue
         name = event.get("activity_type")
-        if not name or name == "LangGraph":
+        # The graph run itself and model calls are activities too, not tools.
+        if not name or name == "LangGraph" or name.startswith("llm_"):
             continue
         spec = graph.tool(name)
         if spec is None:
             spec = ToolSpec(name=name)
             graph.tools.append(spec)
-        spec.observed += 1
+        key = (name, str(event.get("activity_id") or event.get("id")))
+        if key not in counted:
+            counted.add(key)
+            spec.observed += 1
         for span in event.get("spans") or []:
             kind = span.get("span_type") or span.get("semantic_type")
             if kind and kind not in spec.span_types:

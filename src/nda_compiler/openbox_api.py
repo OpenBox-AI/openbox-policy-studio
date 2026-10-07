@@ -130,7 +130,7 @@ class HttpBackend:
 
 
 async def fetch_activity_events(
-    base_url: str, api_key: str, agent_id: str, pages: int = 40
+    base_url: str, api_key: str, agent_id: str, pages: int = 10
 ) -> list[dict[str, Any]]:
     """The agent's recent governance events, newest first (GET /agent/:id/logs).
 
@@ -140,14 +140,17 @@ async def fetch_activity_events(
     """
 
     events: list[dict[str, Any]] = []
+    seen: set[str] = set()
     async with httpx.AsyncClient(
         base_url=base_url.rstrip("/"), headers={"X-API-Key": api_key}, timeout=10
     ) as client:
-        start = 0
-        for _ in range(pages):
+        for page_no in range(pages):
             try:
+                # PaginationDto: zero-based `page`, `perPage` (the `limit`/`start`
+                # names were being ignored, which returned the same ten rows
+                # on every page and inflated every count).
                 response = await client.get(
-                    f"/agent/{agent_id}/logs", params={"limit": 50, "start": start}
+                    f"/agent/{agent_id}/logs", params={"page": page_no, "perPage": 50}
                 )
             except httpx.HTTPError:
                 break
@@ -155,11 +158,14 @@ async def fetch_activity_events(
                 break
             page = _unwrap(response.json())
             rows = page.get("data", []) if isinstance(page, dict) else page
-            if not rows:
+            # Rows are deduplicated by id: a page that brings nothing new means
+            # the server ignored the offset, and the walk stops there.
+            fresh = [r for r in rows or [] if str(r.get("id")) not in seen]
+            if not fresh:
                 break
-            events.extend(rows)
-            start += len(rows)
-            if isinstance(page, dict) and start >= int(page.get("total", 0)):
+            seen.update(str(r.get("id")) for r in fresh)
+            events.extend(fresh)
+            if isinstance(page, dict) and len(events) >= int(page.get("total", 0)):
                 break
     return events
 
