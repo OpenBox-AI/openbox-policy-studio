@@ -1,0 +1,28 @@
+# Bindings for the Coca-Cola matter in openbox-barrier-demo.
+# NDA vocabulary on the left, platform identifiers on the right.
+matter: coca-cola
+disclosing_party: The Coca-Cola Company
+disclosing_party_aliases: [Coca-Cola, Coca Cola]
+receiving_party: Sellist Advisory LLP
+codenames: [Project Fizz]
+purpose: evaluating integration risk for the proposed transaction between the parties
+
+# Folders under the document library that hold the Disclosing Party's material.
+covered_folders:
+  - 0001/10001/
+
+# Agents that count as "Representatives" (need to know for the Purpose).
+representatives:
+  - id: AMY_AGENT_ID
+    name: AmyClientIntelligenceAgent
+
+# Agents in the org that are NOT Representatives for this matter.
+other_agents:
+  - id: BARRY_AGENT_ID
+    name: BarryClientIntelligenceAgent
+  - id: COLIN_AGENT_ID
+    name: ColinClientIntelligenceAgent
+
+read_tools: [read_document]
+file_tools: [upload_document]
+outbound_tools: [send_email, http_post]

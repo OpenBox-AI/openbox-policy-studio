@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openbox-nda-compiler"
+version = "0.1.0"
+description = "Compile an NDA into enforceable OpenBox policies with a governed LangGraph agent"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "fastapi>=0.115.0,<1.0",
+    "httpx>=0.28.0",
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "openbox-langgraph-sdk-python>=1.1.0",
+    "pydantic>=2.7",
+    "pypdf>=5.0.0",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.9",
+    "pyyaml>=6.0",
+    "rich>=13.0.0",
+    "typesafe-sdk>=0.1.0",
+    "uvicorn>=0.30.0,<1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "ruff>=0.6.0"]
+
+[project.scripts]
+nda-compile = "nda_compiler.cli:run"
+nda-web = "nda_compiler.web:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nda_compiler"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "PIE", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Inline page template, and FastAPI's File()/Form() parameter defaults.
+"src/nda_compiler/web.py" = ["E501", "B008"]

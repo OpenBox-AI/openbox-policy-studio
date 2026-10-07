@@ -1,0 +1,1091 @@
+{
+  "matter": "coca-cola",
+  "source": "fixtures/coca_cola_nda.md",
+  "clauses": [
+    {
+      "id": "1",
+      "heading": "Definitions",
+      "text": "\"Confidential Information\" means all non-public information disclosed by the Disclosing Party, including the documents filed under matter 0001/10001, financial models, integration plans and anything marked \"Confidential\" or \"Project Fizz\". \"Representatives\" means the Receiving Party's employees and engaged agents who have a need to know for the Purpose. \"Purpose\" means evaluating integration risk for the proposed transaction between the parties.",
+      "references": []
+    },
+    {
+      "id": "2",
+      "heading": "Permitted Disclosure",
+      "text": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+      "references": []
+    },
+    {
+      "id": "3",
+      "heading": "Use Restriction",
+      "text": "The Receiving Party shall use Confidential Information solely for the Purpose and for no other purpose, including benchmarking, marketing or any work for another client.",
+      "references": []
+    },
+    {
+      "id": "4",
+      "heading": "Third Parties",
+      "text": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+      "references": [
+        "6"
+      ]
+    },
+    {
+      "id": "5",
+      "heading": "Personal Data",
+      "text": "To the extent Confidential Information contains personal data of the Disclosing Party's employees or customers, the Receiving Party shall not reproduce such personal data in any report or communication.",
+      "references": []
+    },
+    {
+      "id": "6",
+      "heading": "Exceptions",
+      "text": "The obligations in Sections 2 to 5 do not apply to information that is publicly available through no fault of the Receiving Party, or that is required to be disclosed by law, provided the Receiving Party gives prompt notice.",
+      "references": []
+    },
+    {
+      "id": "7",
+      "heading": "Term",
+      "text": "This Agreement remains in force for three years from the date of signature. The obligations of confidentiality survive termination for a further two years.",
+      "references": []
+    },
+    {
+      "id": "8",
+      "heading": "Return or Destruction",
+      "text": "Upon written request the Receiving Party shall return or destroy all Confidential Information within thirty days.",
+      "references": []
+    },
+    {
+      "id": "9",
+      "heading": "Governing Law",
+      "text": "This Agreement is governed by the laws of England and Wales.",
+      "references": []
+    }
+  ],
+  "classifications": [
+    {
+      "clause_id": "1",
+      "kind": "definition",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "3",
+      "kind": "use_restriction",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "5",
+      "kind": "personal_data",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "6",
+      "kind": "boilerplate",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "7",
+      "kind": "not_enforceable",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "8",
+      "kind": "not_enforceable",
+      "confidence": 0.99,
+      "probabilities": {}
+    },
+    {
+      "clause_id": "9",
+      "kind": "boilerplate",
+      "confidence": 0.99,
+      "probabilities": {}
+    }
+  ],
+  "obligations": [
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "bound_party": "Receiving Party",
+      "action": "disclose",
+      "subject": "Confidential Information",
+      "permitted_recipients": [
+        "Representatives"
+      ],
+      "prohibited_recipients": [
+        "PepsiCo"
+      ],
+      "exceptions": [],
+      "marked_terms": [],
+      "purpose": null,
+      "duration": null,
+      "source_quote": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+      "ungrounded": []
+    },
+    {
+      "clause_id": "3",
+      "kind": "use_restriction",
+      "bound_party": "Receiving Party",
+      "action": "use",
+      "subject": "Confidential Information",
+      "permitted_recipients": [],
+      "prohibited_recipients": [],
+      "exceptions": [],
+      "marked_terms": [],
+      "purpose": "evaluating integration risk for the proposed transaction between the parties",
+      "duration": null,
+      "source_quote": "The Receiving Party shall use Confidential Information solely for the Purpose and for no other purpose, including benchmarking, marketing or any work for another client.",
+      "ungrounded": []
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "bound_party": "Receiving Party",
+      "action": "transmit",
+      "subject": "Confidential Information",
+      "permitted_recipients": [],
+      "prohibited_recipients": [],
+      "exceptions": [],
+      "marked_terms": [],
+      "purpose": null,
+      "duration": null,
+      "source_quote": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+      "ungrounded": []
+    },
+    {
+      "clause_id": "5",
+      "kind": "personal_data",
+      "bound_party": "Receiving Party",
+      "action": "reproduce",
+      "subject": "Confidential Information",
+      "permitted_recipients": [],
+      "prohibited_recipients": [],
+      "exceptions": [],
+      "marked_terms": [],
+      "purpose": null,
+      "duration": null,
+      "source_quote": "To the extent Confidential Information contains personal data of the Disclosing Party's employees or customers, the Receiving Party shall not reproduce such personal data in any report or communication.",
+      "ungrounded": []
+    }
+  ],
+  "controls": [
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "type": "policy_rule",
+      "agent_id": "BARRY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §2 read_document 0001/10001/",
+        "description": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "priority": 90,
+        "match_mode": "all",
+        "conditions": [
+          {
+            "id": "tool",
+            "left": {
+              "kind": "field",
+              "field": "activity_type",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "equals",
+            "right": {
+              "kind": "literal",
+              "value": "read_document",
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "folder",
+            "left": {
+              "kind": "field",
+              "field": "activity_input.document_id",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "starts_with",
+            "right": {
+              "kind": "literal",
+              "value": "0001/10001/",
+              "valueType": "string"
+            }
+          }
+        ],
+        "decision": "BLOCK",
+        "reason": "NDA The Coca-Cola Company §2: The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "constraints": [],
+        "trust_impact": "medium",
+        "is_active": false
+      },
+      "tests": [
+        {
+          "label": "BarryClientIntelligenceAgent read_document covered folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "BARRY_AGENT_ID",
+            "activity_type": "read_document",
+            "activity_input": {
+              "document_id": "0001/10001/deck.docx"
+            }
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "BarryClientIntelligenceAgent read_document other folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "BARRY_AGENT_ID",
+            "activity_type": "read_document",
+            "activity_input": {
+              "document_id": "9999/99999/deck.docx"
+            }
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "type": "policy_rule",
+      "agent_id": "BARRY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §2 upload_document 0001/10001/",
+        "description": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "priority": 90,
+        "match_mode": "all",
+        "conditions": [
+          {
+            "id": "tool",
+            "left": {
+              "kind": "field",
+              "field": "activity_type",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "equals",
+            "right": {
+              "kind": "literal",
+              "value": "upload_document",
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "folder",
+            "left": {
+              "kind": "field",
+              "field": "activity_input.document_id",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "starts_with",
+            "right": {
+              "kind": "literal",
+              "value": "0001/10001/",
+              "valueType": "string"
+            }
+          }
+        ],
+        "decision": "BLOCK",
+        "reason": "NDA The Coca-Cola Company §2: The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "constraints": [],
+        "trust_impact": "medium",
+        "is_active": false
+      },
+      "tests": [
+        {
+          "label": "BarryClientIntelligenceAgent upload_document covered folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "BARRY_AGENT_ID",
+            "activity_type": "upload_document",
+            "activity_input": {
+              "document_id": "0001/10001/deck.docx"
+            }
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "BarryClientIntelligenceAgent upload_document other folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "BARRY_AGENT_ID",
+            "activity_type": "upload_document",
+            "activity_input": {
+              "document_id": "9999/99999/deck.docx"
+            }
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "type": "policy_rule",
+      "agent_id": "COLIN_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §2 read_document 0001/10001/",
+        "description": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "priority": 90,
+        "match_mode": "all",
+        "conditions": [
+          {
+            "id": "tool",
+            "left": {
+              "kind": "field",
+              "field": "activity_type",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "equals",
+            "right": {
+              "kind": "literal",
+              "value": "read_document",
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "folder",
+            "left": {
+              "kind": "field",
+              "field": "activity_input.document_id",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "starts_with",
+            "right": {
+              "kind": "literal",
+              "value": "0001/10001/",
+              "valueType": "string"
+            }
+          }
+        ],
+        "decision": "BLOCK",
+        "reason": "NDA The Coca-Cola Company §2: The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "constraints": [],
+        "trust_impact": "medium",
+        "is_active": false
+      },
+      "tests": [
+        {
+          "label": "ColinClientIntelligenceAgent read_document covered folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "COLIN_AGENT_ID",
+            "activity_type": "read_document",
+            "activity_input": {
+              "document_id": "0001/10001/deck.docx"
+            }
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "ColinClientIntelligenceAgent read_document other folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "COLIN_AGENT_ID",
+            "activity_type": "read_document",
+            "activity_input": {
+              "document_id": "9999/99999/deck.docx"
+            }
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "type": "policy_rule",
+      "agent_id": "COLIN_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §2 upload_document 0001/10001/",
+        "description": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "priority": 90,
+        "match_mode": "all",
+        "conditions": [
+          {
+            "id": "tool",
+            "left": {
+              "kind": "field",
+              "field": "activity_type",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "equals",
+            "right": {
+              "kind": "literal",
+              "value": "upload_document",
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "folder",
+            "left": {
+              "kind": "field",
+              "field": "activity_input.document_id",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "starts_with",
+            "right": {
+              "kind": "literal",
+              "value": "0001/10001/",
+              "valueType": "string"
+            }
+          }
+        ],
+        "decision": "BLOCK",
+        "reason": "NDA The Coca-Cola Company §2: The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "constraints": [],
+        "trust_impact": "medium",
+        "is_active": false
+      },
+      "tests": [
+        {
+          "label": "ColinClientIntelligenceAgent upload_document covered folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "COLIN_AGENT_ID",
+            "activity_type": "upload_document",
+            "activity_input": {
+              "document_id": "0001/10001/deck.docx"
+            }
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "ColinClientIntelligenceAgent upload_document other folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "COLIN_AGENT_ID",
+            "activity_type": "upload_document",
+            "activity_input": {
+              "document_id": "9999/99999/deck.docx"
+            }
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "3",
+      "kind": "use_restriction",
+      "type": "judgement",
+      "agent_id": "AMY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §3 use within Purpose",
+        "triggers": [
+          "llm_tool_call"
+        ],
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "in",
+            "value": [
+              "read_document"
+            ]
+          }
+        ],
+        "question": {
+          "type": "noul",
+          "instructions": {
+            "what": "Is this use of the Disclosing Party's Confidential Information outside the Purpose defined in the NDA?",
+            "purpose": "evaluating integration risk for the proposed transaction between the parties",
+            "true": "The task the agent is performing serves another client, benchmarking, marketing or any aim other than the Purpose.",
+            "false": "The task is a step in evaluating integration risk for the proposed transaction between the parties."
+          }
+        },
+        "model": "jev-latest",
+        "block_above": 0.7,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §3: The Receiving Party shall use Confidential Information solely for the Purpose and for no other purpose, including benchmarking, marketing or any work for another client.",
+        "on_unavailable": "block"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": null,
+      "note": "runtime judgement, evaluated by harness"
+    },
+    {
+      "clause_id": "3",
+      "kind": "use_restriction",
+      "type": "judgement",
+      "agent_id": "BARRY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §3 use within Purpose",
+        "triggers": [
+          "llm_tool_call"
+        ],
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "in",
+            "value": [
+              "read_document"
+            ]
+          }
+        ],
+        "question": {
+          "type": "noul",
+          "instructions": {
+            "what": "Is this use of the Disclosing Party's Confidential Information outside the Purpose defined in the NDA?",
+            "purpose": "evaluating integration risk for the proposed transaction between the parties",
+            "true": "The task the agent is performing serves another client, benchmarking, marketing or any aim other than the Purpose.",
+            "false": "The task is a step in evaluating integration risk for the proposed transaction between the parties."
+          }
+        },
+        "model": "jev-latest",
+        "block_above": 0.7,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §3: The Receiving Party shall use Confidential Information solely for the Purpose and for no other purpose, including benchmarking, marketing or any work for another client.",
+        "on_unavailable": "block"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": null,
+      "note": "runtime judgement, evaluated by harness"
+    },
+    {
+      "clause_id": "3",
+      "kind": "use_restriction",
+      "type": "judgement",
+      "agent_id": "COLIN_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §3 use within Purpose",
+        "triggers": [
+          "llm_tool_call"
+        ],
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "in",
+            "value": [
+              "read_document"
+            ]
+          }
+        ],
+        "question": {
+          "type": "noul",
+          "instructions": {
+            "what": "Is this use of the Disclosing Party's Confidential Information outside the Purpose defined in the NDA?",
+            "purpose": "evaluating integration risk for the proposed transaction between the parties",
+            "true": "The task the agent is performing serves another client, benchmarking, marketing or any aim other than the Purpose.",
+            "false": "The task is a step in evaluating integration risk for the proposed transaction between the parties."
+          }
+        },
+        "model": "jev-latest",
+        "block_above": 0.7,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §3: The Receiving Party shall use Confidential Information solely for the Purpose and for no other purpose, including benchmarking, marketing or any work for another client.",
+        "on_unavailable": "block"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": null,
+      "note": "runtime judgement, evaluated by harness"
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "type": "behavior_rule",
+      "agent_id": "AMY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §4 outbound after read via send_email",
+        "description": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "priority": 90,
+        "trigger": "llm_tool_call",
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "equals",
+            "value": "send_email"
+          }
+        ],
+        "states": [
+          {
+            "semantic_type": "llm_tool_call",
+            "match": [
+              {
+                "field": "tool_name",
+                "op": "in",
+                "value": [
+                  "read_document"
+                ]
+              },
+              {
+                "field": "document_id",
+                "op": "starts_with",
+                "value": "0001/10001/"
+              }
+            ]
+          }
+        ],
+        "time_window": 3600,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §4: The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "trust_impact": "high"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "type": "behavior_rule",
+      "agent_id": "AMY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §4 outbound after read via http_post",
+        "description": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "priority": 90,
+        "trigger": "llm_tool_call",
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "equals",
+            "value": "http_post"
+          }
+        ],
+        "states": [
+          {
+            "semantic_type": "llm_tool_call",
+            "match": [
+              {
+                "field": "tool_name",
+                "op": "in",
+                "value": [
+                  "read_document"
+                ]
+              },
+              {
+                "field": "document_id",
+                "op": "starts_with",
+                "value": "0001/10001/"
+              }
+            ]
+          }
+        ],
+        "time_window": 3600,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §4: The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "trust_impact": "high"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "type": "behavior_rule",
+      "agent_id": "BARRY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §4 outbound after read via send_email",
+        "description": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "priority": 90,
+        "trigger": "llm_tool_call",
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "equals",
+            "value": "send_email"
+          }
+        ],
+        "states": [
+          {
+            "semantic_type": "llm_tool_call",
+            "match": [
+              {
+                "field": "tool_name",
+                "op": "in",
+                "value": [
+                  "read_document"
+                ]
+              },
+              {
+                "field": "document_id",
+                "op": "starts_with",
+                "value": "0001/10001/"
+              }
+            ]
+          }
+        ],
+        "time_window": 3600,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §4: The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "trust_impact": "high"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "type": "behavior_rule",
+      "agent_id": "BARRY_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §4 outbound after read via http_post",
+        "description": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "priority": 90,
+        "trigger": "llm_tool_call",
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "equals",
+            "value": "http_post"
+          }
+        ],
+        "states": [
+          {
+            "semantic_type": "llm_tool_call",
+            "match": [
+              {
+                "field": "tool_name",
+                "op": "in",
+                "value": [
+                  "read_document"
+                ]
+              },
+              {
+                "field": "document_id",
+                "op": "starts_with",
+                "value": "0001/10001/"
+              }
+            ]
+          }
+        ],
+        "time_window": 3600,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §4: The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "trust_impact": "high"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "type": "behavior_rule",
+      "agent_id": "COLIN_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §4 outbound after read via send_email",
+        "description": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "priority": 90,
+        "trigger": "llm_tool_call",
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "equals",
+            "value": "send_email"
+          }
+        ],
+        "states": [
+          {
+            "semantic_type": "llm_tool_call",
+            "match": [
+              {
+                "field": "tool_name",
+                "op": "in",
+                "value": [
+                  "read_document"
+                ]
+              },
+              {
+                "field": "document_id",
+                "op": "starts_with",
+                "value": "0001/10001/"
+              }
+            ]
+          }
+        ],
+        "time_window": 3600,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §4: The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "trust_impact": "high"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "4",
+      "kind": "third_party_disclosure",
+      "type": "behavior_rule",
+      "agent_id": "COLIN_AGENT_ID",
+      "payload": {
+        "rule_name": "NDA coca-cola §4 outbound after read via http_post",
+        "description": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "priority": 90,
+        "trigger": "llm_tool_call",
+        "trigger_match": [
+          {
+            "field": "tool_name",
+            "op": "equals",
+            "value": "http_post"
+          }
+        ],
+        "states": [
+          {
+            "semantic_type": "llm_tool_call",
+            "match": [
+              {
+                "field": "tool_name",
+                "op": "in",
+                "value": [
+                  "read_document"
+                ]
+              },
+              {
+                "field": "document_id",
+                "op": "starts_with",
+                "value": "0001/10001/"
+              }
+            ]
+          }
+        ],
+        "time_window": 3600,
+        "verdict": 3,
+        "reject_message": "NDA The Coca-Cola Company §4: The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
+        "trust_impact": "high"
+      },
+      "tests": [],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "5",
+      "kind": "personal_data",
+      "type": "guardrail",
+      "agent_id": "AMY_AGENT_ID",
+      "payload": {
+        "name": "NDA coca-cola §5 personal data",
+        "guardrail_type": "1",
+        "processing_stage": "1",
+        "params": {
+          "entities": [
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "PERSON",
+            "CREDIT_CARD"
+          ],
+          "replace_values": [
+            "[email]",
+            "[phone]",
+            "[name]",
+            "[card]"
+          ]
+        },
+        "settings": {
+          "on_fail": 1,
+          "timeout": 5000,
+          "retry_attempts": 1,
+          "log_violation": true
+        },
+        "trust_impact": "medium"
+      },
+      "tests": [
+        {
+          "label": "contains email",
+          "input": {
+            "text": "contact jane.doe@coca-cola.com"
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "plain text",
+          "input": {
+            "text": "integration plan"
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "5",
+      "kind": "personal_data",
+      "type": "guardrail",
+      "agent_id": "BARRY_AGENT_ID",
+      "payload": {
+        "name": "NDA coca-cola §5 personal data",
+        "guardrail_type": "1",
+        "processing_stage": "1",
+        "params": {
+          "entities": [
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "PERSON",
+            "CREDIT_CARD"
+          ],
+          "replace_values": [
+            "[email]",
+            "[phone]",
+            "[name]",
+            "[card]"
+          ]
+        },
+        "settings": {
+          "on_fail": 1,
+          "timeout": 5000,
+          "retry_attempts": 1,
+          "log_violation": true
+        },
+        "trust_impact": "medium"
+      },
+      "tests": [
+        {
+          "label": "contains email",
+          "input": {
+            "text": "contact jane.doe@coca-cola.com"
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "plain text",
+          "input": {
+            "text": "integration plan"
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    },
+    {
+      "clause_id": "5",
+      "kind": "personal_data",
+      "type": "guardrail",
+      "agent_id": "COLIN_AGENT_ID",
+      "payload": {
+        "name": "NDA coca-cola §5 personal data",
+        "guardrail_type": "1",
+        "processing_stage": "1",
+        "params": {
+          "entities": [
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "PERSON",
+            "CREDIT_CARD"
+          ],
+          "replace_values": [
+            "[email]",
+            "[phone]",
+            "[name]",
+            "[card]"
+          ]
+        },
+        "settings": {
+          "on_fail": 1,
+          "timeout": 5000,
+          "retry_attempts": 1,
+          "log_violation": true
+        },
+        "trust_impact": "medium"
+      },
+      "tests": [
+        {
+          "label": "contains email",
+          "input": {
+            "text": "contact jane.doe@coca-cola.com"
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "plain text",
+          "input": {
+            "text": "integration plan"
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.95,
+      "status": "active",
+      "remote_id": "dry-run",
+      "note": ""
+    }
+  ],
+  "review": [],
+  "timings": [
+    {
+      "stage": "parse",
+      "ms": 0.13491709250956774
+    },
+    {
+      "stage": "classify",
+      "ms": 0.09208300616592169
+    },
+    {
+      "stage": "extract",
+      "ms": 0.3512919647619128
+    },
+    {
+      "stage": "build",
+      "ms": 0.06116693839430809
+    },
+    {
+      "stage": "verify",
+      "ms": 0.10154105257242918
+    },
+    {
+      "stage": "apply",
+      "ms": 0.13745797332376242
+    }
+  ],
+  "models": {
+    "judge": "fake-judge",
+    "extractor": "fake-extractor"
+  }
+}
