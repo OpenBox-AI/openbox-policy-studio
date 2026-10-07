@@ -52,6 +52,12 @@ KIND_CRITERIA: dict[str, dict[str, Any]] = {
         "its reproduction or processing.",
         "example": "shall not reproduce such personal data in any report",
     },
+    ControlKind.SECURE_PROCESSING.value: {
+        "what": "Requires the information to be handled only inside an isolated, secure, "
+        "segregated or sandboxed environment, or never on shared infrastructure.",
+        "not_for": "Clauses about who may see it or where it may be sent.",
+        "example": "shall be processed only within the Adviser's isolated analysis environment",
+    },
     ControlKind.NOT_ENFORCEABLE.value: {
         "what": "A real obligation that cannot be checked on an agent's tool calls: term, "
         "survival, return or destruction, notice, remedies, governing law, assignment.",
@@ -71,6 +77,7 @@ KIND_CRITERIA: dict[str, dict[str, Any]] = {
 _FAKE_RULES: list[tuple[ControlKind, re.Pattern[str]]] = [
     (ControlKind.DEFINITION, re.compile(r"\bmeans\b.*\bmeans\b", re.I | re.S)),
     (ControlKind.PERSONAL_DATA, re.compile(r"personal data", re.I)),
+    (ControlKind.SECURE_PROCESSING, re.compile(r"isolated|sandbox|segregated|shared infrastructure", re.I)),
     (ControlKind.THIRD_PARTY_DISCLOSURE, re.compile(r"transmit|email|send|third part", re.I)),
     (
         ControlKind.PERMITTED_RECIPIENTS,
@@ -105,8 +112,10 @@ class Judge(Protocol):
 
 DECISION_CRITERIA: dict[str, dict[str, str]] = {
     "BLOCK": {
-        "what": "The clause forbids the action outright: shall not, may not, in no event, "
-        "is prohibited.",
+        "what": "The clause forbids the action outright (shall not, may not, is prohibited) "
+        "and says nothing about the consequences of a breach.",
+        "not_for": "Clauses that allow the action with consent (REQUIRE_APPROVAL) or that "
+        "call a breach material or name injunctive relief or termination (HALT).",
         "example": "shall not disclose Confidential Information to any third party",
     },
     "REQUIRE_APPROVAL": {
@@ -116,9 +125,9 @@ DECISION_CRITERIA: dict[str, dict[str, str]] = {
         "Disclosing Party",
     },
     "HALT": {
-        "what": "The clause treats the action as so serious that any attempt should stop "
-        "the agent entirely: material breach, immediate termination, injunctive relief "
-        "named for this act.",
+        "what": "The clause forbids the action AND spells out severe consequences for a "
+        "breach of it: 'material breach', 'injunctive relief', 'immediate termination'. "
+        "Any attempt should stop the agent's run, not just the one call.",
         "example": "any disclosure to a competitor constitutes a material breach entitling "
         "the Disclosing Party to immediate injunctive relief",
     },

@@ -47,6 +47,8 @@ class Bindings(BaseModel):
     disclosing_party_aliases: list[str] = Field(default_factory=list)
     receiving_party: str
     covered_folders: list[str]
+    # Named outsiders the NDA forbids disclosure to -> their folder prefix on the platform.
+    competitor_folders: dict[str, str] = Field(default_factory=dict)
     representatives: list[AgentBinding]
     other_agents: list[AgentBinding] = Field(default_factory=list)
     # Fallbacks for agents without an exported graph.
@@ -64,6 +66,19 @@ class Bindings(BaseModel):
     @property
     def party_terms(self) -> list[str]:
         return [self.disclosing_party, *self.disclosing_party_aliases, *self.codenames]
+
+    def competitor(self, name: str) -> tuple[str, str] | None:
+        """(bindings name, folder) for a recipient the clause names, if mapped."""
+
+        wanted = name.lower()
+        for key, folder in self.competitor_folders.items():
+            if key.lower() in wanted or wanted in key.lower():
+                return key, folder
+        return None
+
+    def competitor_folder(self, name: str) -> str | None:
+        hit = self.competitor(name)
+        return hit[1] if hit else None
 
     def tools_for(self, agent: AgentBinding) -> ToolMap:
         graph = self.graphs.get(agent.id)

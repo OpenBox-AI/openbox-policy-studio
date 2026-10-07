@@ -22,6 +22,7 @@ class ControlKind(StrEnum):
     USE_RESTRICTION = "use_restriction"
     MARKED_MATERIAL = "marked_material"
     PERSONAL_DATA = "personal_data"
+    SECURE_PROCESSING = "secure_processing"
     NOT_ENFORCEABLE = "not_enforceable"
     DEFINITION = "definition"
     BOILERPLATE = "boilerplate"
@@ -34,6 +35,7 @@ ENFORCEABLE_KINDS = frozenset(
         ControlKind.USE_RESTRICTION,
         ControlKind.MARKED_MATERIAL,
         ControlKind.PERSONAL_DATA,
+        ControlKind.SECURE_PROCESSING,
     }
 )
 

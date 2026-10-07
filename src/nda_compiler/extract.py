@@ -88,10 +88,11 @@ class FakeExtractor:
                 ControlKind.USE_RESTRICTION: "use",
                 ControlKind.MARKED_MATERIAL: "reproduce",
                 ControlKind.PERSONAL_DATA: "reproduce",
+                ControlKind.SECURE_PROCESSING: "process",
             }.get(kind, "comply"),
             subject="Confidential Information",
             permitted_recipients=["Representatives"] if "Representatives" in text else [],
-            prohibited_recipients=re.findall(r"such as ([A-Z][A-Za-z]+)", text),
+            prohibited_recipients=re.findall(r"(?:such as|to) ([A-Z][a-z]+(?: [A-Z][a-z]+)?)(?= or |,| is| constitutes)", text) or re.findall(r"such as ([A-Z][A-Za-z]+)", text),
             marked_terms=[q for q in quoted if q not in {"Disclosing Party", "Receiving Party"}]
             if kind == ControlKind.MARKED_MATERIAL
             else [],

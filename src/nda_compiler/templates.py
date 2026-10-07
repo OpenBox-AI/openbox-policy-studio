@@ -77,7 +77,18 @@ def _rule(
     tests: list[TestCase],
     binding: dict[str, Any],
     priority: int = 90,
+    decision: str | None = None,
 ) -> Control:
+    """One policy rule. Decisions, in the platform's own terms:
+
+    ALLOW            an explicit permission, placed above the blocks (priority 95)
+    CONSTRAIN        let it run, inside the sandbox (the platform's only constraint)
+    REQUIRE_APPROVAL hold for a person; chosen when the clause says "with consent"
+    BLOCK            refuse the call; "shall not"
+    HALT             refuse and stop the run; "material breach", "injunctive relief"
+    """
+
+    decision = decision or obligation.decision
     return Control(
         clause_id=obligation.clause_id,
         kind=obligation.kind,
@@ -89,58 +100,124 @@ def _rule(
             "priority": priority,
             "match_mode": "all",
             "conditions": conditions,
-            "decision": obligation.decision,
+            "decision": decision,
             "reason": _reason(obligation, bindings),
-            "constraints": [],
-            "trust_impact": "medium",
+            "constraints": ["run_in_sandbox"] if decision == "CONSTRAIN" else [],
+            "trust_impact": "none" if decision == "ALLOW" else "medium",
             "is_active": False,
         },
         tests=tests,
-        binding=binding,
+        binding={**binding, "decision": decision},
+    )
+
+
+def _folder_rule(
+    obligation: Obligation,
+    bindings: Bindings,
+    agent: AgentBinding,
+    tool: ToolSpec,
+    folder: str,
+    decision: str,
+    label: str,
+    priority: int = 90,
+) -> Control | None:
+    arg = tool.document_arg
+    if arg is None:
+        return None  # reported by not_applicable()
+    what = "file" if tool.role == "files_to_store" else "read"
+    other_folder = "9999/99999/"
+    return _rule(
+        obligation,
+        bindings,
+        agent,
+        tool,
+        f"{tool.name} {folder}{label}",
+        [
+            _condition("tool", "activity_type", "equals", tool.name),
+            _condition("folder", tool.input_path(arg), "starts_with", folder),
+        ],
+        [
+            TestCase(
+                label=f"{agent.name} {tool.name} {folder}",
+                input=_tool_event(agent.id, tool, arg, f"{folder}deck.docx"),
+                expect=decision,
+            ),
+            TestCase(
+                label=f"{agent.name} {tool.name} other folder",
+                input=_tool_event(agent.id, tool, arg, f"{other_folder}deck.docx"),
+                expect="ALLOW",
+            ),
+        ],
+        {**_binding(tool, arg, what), "folder": folder},
+        priority=priority,
+        decision=decision,
     )
 
 
 def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    """Non-representatives may not read or file the Disclosing Party's material.
+    """Who may handle the Disclosing Party's material, and who may not.
 
-    One rule per (agent, tool that reads or files material, covered folder).
+    Three shapes, all on the folder the material lives in:
+      ALLOW  (priority 95) for each Representative: the permission the clause
+             grants, written down so it outranks any later block;
+      <decision> (priority 90) for every other agent on the covered folder:
+             BLOCK for "shall not", REQUIRE_APPROVAL for "with consent";
+      <decision> for every agent filing into a named competitor's folder,
+             when the clause names them and the bindings know their folder:
+             HALT when the clause calls it a material breach.
+    """
+
+    controls: list[Control] = []
+    competitors: dict[str, str] = {}
+    for name in obligation.prohibited_recipients:
+        hit = bindings.competitor(name)
+        if hit:
+            competitors[hit[0]] = hit[1]
+    # The general folder rules come from the clause saying who may see the
+    # material. A clause that only names competitors produces competitor rules.
+    if obligation.permitted_recipients or not competitors:
+        for agent in bindings.representatives:
+            for tool in bindings.tools_for(agent).access:
+                for folder in bindings.covered_folders:
+                    rule = _folder_rule(obligation, bindings, agent, tool, folder, "ALLOW", " permitted", 95)
+                    if rule:
+                        controls.append(rule)
+        for agent in bindings.other_agents:
+            for tool in bindings.tools_for(agent).access:
+                for folder in bindings.covered_folders:
+                    rule = _folder_rule(obligation, bindings, agent, tool, folder, obligation.decision, "")
+                    if rule:
+                        controls.append(rule)
+    # Disclosure to a named competitor is never a matter of approval: refuse
+    # it, and stop the run when the clause calls it a material breach.
+    competitor_decision = "HALT" if obligation.decision == "HALT" else "BLOCK"
+    for name, folder in competitors.items():
+        for agent in bindings.all_agents:
+            for tool in bindings.tools_for(agent).file:
+                rule = _folder_rule(
+                    obligation, bindings, agent, tool, folder, competitor_decision, f" ({name})"
+                )
+                if rule:
+                    rule.binding["competitor"] = name
+                    controls.append(rule)
+    return controls
+
+
+def secure_processing(obligation: Obligation, bindings: Bindings) -> list[Control]:
+    """Material may be handled only inside an isolated environment: CONSTRAIN (sandbox).
+
+    The platform's one constraint is run_in_sandbox, so every read of the
+    covered folder by any agent runs sandboxed. Priority 80 keeps it below the
+    access decisions above it.
     """
 
     controls = []
-    other_folder = "9999/99999/"
-    for agent in bindings.other_agents:
-        for tool in bindings.tools_for(agent).access:
-            arg = tool.document_arg
-            if arg is None:
-                continue  # reported by not_applicable()
-            what = "file" if tool.role == "files_to_store" else "read"
+    for agent in bindings.all_agents:
+        for tool in bindings.tools_for(agent).read:
             for folder in bindings.covered_folders:
-                controls.append(
-                    _rule(
-                        obligation,
-                        bindings,
-                        agent,
-                        tool,
-                        f"{tool.name} {folder}",
-                        [
-                            _condition("tool", "activity_type", "equals", tool.name),
-                            _condition("folder", tool.input_path(arg), "starts_with", folder),
-                        ],
-                        [
-                            TestCase(
-                                label=f"{agent.name} {tool.name} covered folder",
-                                input=_tool_event(agent.id, tool, arg, f"{folder}deck.docx"),
-                                expect=obligation.decision,
-                            ),
-                            TestCase(
-                                label=f"{agent.name} {tool.name} other folder",
-                                input=_tool_event(agent.id, tool, arg, f"{other_folder}deck.docx"),
-                                expect="ALLOW",
-                            ),
-                        ],
-                        _binding(tool, arg, what),
-                    )
-                )
+                rule = _folder_rule(obligation, bindings, agent, tool, folder, "CONSTRAIN", " sandboxed", 80)
+                if rule:
+                    controls.append(rule)
     return controls
 
 
@@ -167,7 +244,7 @@ def third_party_disclosure(obligation: Obligation, bindings: Bindings) -> list[C
                     bindings,
                     agent,
                     tool,
-                    f"{tool.name} blocked",
+                    f"{tool.name} outbound",
                     [_condition("tool", "activity_type", "equals", tool.name)],
                     [
                         TestCase(
@@ -284,6 +361,20 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
                     f"sending tool with a free-text argument to check for the markings."
                 )
     if obligation.kind == ControlKind.PERMITTED_RECIPIENTS:
+        # Only named parties can have a folder; "any other person" is the rule itself.
+        unmapped = [
+            n
+            for n in obligation.prohibited_recipients
+            if not bindings.competitor_folder(n)
+            and n[:1].isupper()
+            and not n.lower().startswith(("any", "other", "the "))
+        ]
+        if unmapped:
+            notes.append(
+                f"§{obligation.clause_id}: the clause names {', '.join(unmapped)} as forbidden "
+                f"recipients, but the matter's bindings give no folder for them, so filing into "
+                f"their folder cannot be matched. Add competitor_folders to the bindings."
+            )
         for agent in bindings.other_agents:
             for tool in bindings.tools_for(agent).access:
                 if tool.document_arg is None:
@@ -299,6 +390,7 @@ TEMPLATES = {
     ControlKind.PERMITTED_RECIPIENTS: permitted_recipients,
     ControlKind.THIRD_PARTY_DISCLOSURE: third_party_disclosure,
     ControlKind.MARKED_MATERIAL: marked_material,
+    ControlKind.SECURE_PROCESSING: secure_processing,
     # USE_RESTRICTION and PERSONAL_DATA have no policy-rule expression; see not_applicable().
 }
 
@@ -326,18 +418,30 @@ def describe(control: Control, bindings: Bindings) -> str:
     b = control.binding
     tool = b.get("tool")
     what = b.get("what")
+    decision = control.payload.get("decision", "BLOCK")
     effect = {
         "BLOCK": "blocked from calling",
         "HALT": "stopped entirely (the whole run halts) if it calls",
         "REQUIRE_APPROVAL": "held for a person's approval in OpenBox before it may call",
-        "CONSTRAIN": "constrained when it calls",
-        "ALLOW": "allowed to call",
-    }.get(control.payload.get("decision", "BLOCK"), "blocked from calling")
+        "CONSTRAIN": "made to run inside the sandbox when it calls",
+        "ALLOW": "explicitly allowed to call",
+    }.get(decision, "blocked from calling")
+    if b.get("competitor"):
+        return (
+            f"Agent {agent} is {effect} its '{tool}' tool to {what} any document into the "
+            f"folder of {b['competitor']} ({b.get('folder')}), a competitor the NDA names. "
+            f"Filing elsewhere is unaffected."
+        )
     if what in ("read", "file"):
+        tail = (
+            " This permission is written down so it outranks the blocks on other agents."
+            if decision == "ALLOW"
+            else " Documents in other folders are allowed."
+        )
         return (
             f"Agent {agent} ({role} under this NDA{rep_note}) is {effect} its "
             f"'{tool}' tool to {what} any document whose '{b.get('arg')}' lies under the "
-            f"{party} folder {folders}. Documents in other folders are allowed."
+            f"{party} folder {folders}.{tail}"
         )
     if what == "send":
         return (
