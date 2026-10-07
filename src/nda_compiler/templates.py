@@ -1,10 +1,12 @@
-"""Obligation x bindings x agent graph -> OpenBox control payloads.
+"""Obligation x bindings x agent graph -> OpenBox policy rules.
 
-No model writes a rule. Each control kind has one template that fills slots
+One output type: the policy rule an agent's Policies tab lists
+(CreatePolicyRuleDto: structured conditions over the tool call, a decision).
+No model writes a rule. Each clause kind has one template that fills slots
 from the obligation (what the NDA says), the bindings (who the parties are on
-the platform) and the agent's graph (which tools exist, what they take, what
-they do). Payloads match the backend DTOs exactly; the API rejects unknown
-fields with 422, so nothing extra goes in.
+the platform) and the agent's graph (which tools exist and what they take).
+A clause that cannot be expressed as conditions on a tool call is reported
+as not applicable, with the reason, and nothing is invented for it.
 
 Every template also emits the test cases that /evaluate runs before the rule
 is activated: one input the rule must catch, one it must let through. Test
@@ -19,14 +21,6 @@ from typing import Any
 from .agent_graph import ToolSpec
 from .bindings import AgentBinding, Bindings
 from .models import Control, ControlKind, Obligation, TestCase
-
-# Guardrail enums from openbox-backend (modules/agent/enums).
-GUARDRAIL_PII = "1"
-GUARDRAIL_BANLIST = "4"
-STAGE_OUTPUT = "1"
-ON_FAIL_BLOCK = 1
-# Behavior-rule verdicts (common/enums/verdict.enum.ts).
-VERDICT_BLOCK = 3
 
 
 def _field(path: str) -> dict[str, Any]:
@@ -52,7 +46,7 @@ def _reason(obligation: Obligation, bindings: Bindings) -> str:
     return f"NDA {bindings.disclosing_party} §{obligation.clause_id}: {obligation.source_quote}"
 
 
-def _binding(tool: ToolSpec, arg: str | None = None) -> dict[str, Any]:
+def _binding(tool: ToolSpec, arg: str | None, what: str) -> dict[str, Any]:
     return {
         "tool": tool.name,
         "arg": arg,
@@ -60,58 +54,79 @@ def _binding(tool: ToolSpec, arg: str | None = None) -> dict[str, Any]:
         "role": tool.role,
         "observed": tool.observed,
         "input_shape": tool.input_shape or "list (SDK convention)",
+        "what": what,
     }
 
 
-def _tool_event(agent_id: str, tool: ToolSpec, arg: str, document_id: str) -> dict[str, Any]:
+def _tool_event(agent_id: str, tool: ToolSpec, arg: str, value: str) -> dict[str, Any]:
     return {
         "event_type": "ActivityStarted",
         "agent_id": agent_id,
         "activity_type": tool.name,
-        "activity_input": tool.example_input(arg, document_id),
+        "activity_input": tool.example_input(arg, value),
     }
+
+
+def _rule(
+    obligation: Obligation,
+    bindings: Bindings,
+    agent: AgentBinding,
+    tool: ToolSpec,
+    name: str,
+    conditions: list[dict[str, Any]],
+    tests: list[TestCase],
+    binding: dict[str, Any],
+    priority: int = 90,
+) -> Control:
+    return Control(
+        clause_id=obligation.clause_id,
+        kind=obligation.kind,
+        type="policy_rule",
+        agent_id=agent.id,
+        payload={
+            "rule_name": _rule_name(name, obligation, bindings),
+            "description": obligation.source_quote,
+            "priority": priority,
+            "match_mode": "all",
+            "conditions": conditions,
+            "decision": "BLOCK",
+            "reason": _reason(obligation, bindings),
+            "constraints": [],
+            "trust_impact": "medium",
+            "is_active": False,
+        },
+        tests=tests,
+        binding=binding,
+    )
 
 
 def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Control]:
     """Non-representatives may not read or file the Disclosing Party's material.
 
     One rule per (agent, tool that reads or files material, covered folder).
-    The tool list and the argument that carries the path come from the
-    agent's graph.
     """
 
     controls = []
+    other_folder = "9999/99999/"
     for agent in bindings.other_agents:
         for tool in bindings.tools_for(agent).access:
             arg = tool.document_arg
             if arg is None:
-                continue  # a reader with no path argument cannot be scoped to a folder
+                continue  # reported by not_applicable()
+            what = "file" if tool.role == "files_to_store" else "read"
             for folder in bindings.covered_folders:
-                payload = {
-                    "rule_name": _rule_name(f"{tool.name} {folder}", obligation, bindings),
-                    "description": obligation.source_quote,
-                    "priority": 90,
-                    "match_mode": "all",
-                    "conditions": [
-                        _condition("tool", "activity_type", "equals", tool.name),
-                        _condition("folder", tool.input_path(arg), "starts_with", folder),
-                    ],
-                    "decision": "BLOCK",
-                    "reason": _reason(obligation, bindings),
-                    "constraints": [],
-                    "trust_impact": "medium",
-                    "is_active": False,
-                }
-                other_folder = "9999/99999/"
                 controls.append(
-                    Control(
-                        clause_id=obligation.clause_id,
-                        kind=obligation.kind,
-                        type="policy_rule",
-                        agent_id=agent.id,
-                        payload=payload,
-                        binding=_binding(tool, arg),
-                        tests=[
+                    _rule(
+                        obligation,
+                        bindings,
+                        agent,
+                        tool,
+                        f"{tool.name} {folder}",
+                        [
+                            _condition("tool", "activity_type", "equals", tool.name),
+                            _condition("folder", tool.input_path(arg), "starts_with", folder),
+                        ],
+                        [
                             TestCase(
                                 label=f"{agent.name} {tool.name} covered folder",
                                 input=_tool_event(agent.id, tool, arg, f"{folder}deck.docx"),
@@ -123,72 +138,102 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
                                 expect="ALLOW",
                             ),
                         ],
+                        _binding(tool, arg, what),
                     )
                 )
     return controls
 
 
 def third_party_disclosure(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    """After reading covered material, no outbound send within the window.
+    """Nothing may be sent outside the firm: block every outbound tool the agent has.
 
-    Behavior rules run over instrumented spans: the trigger is the outbound
-    tool call, the prior state is a read. Both come from the graph, and the
-    rule is only proposed for an agent whose graph can actually reach an
-    outbound tool after a read. An agent with no outbound tool gets nothing
-    here; the clause is reported as not applicable instead.
+    A policy rule sees one tool call, not what was read before it, so the rule
+    is on the sending itself. An agent whose graph has no outbound tool gets
+    nothing here and the clause is reported as not applicable.
     """
 
     controls = []
     for agent in bindings.all_agents:
-        tools = bindings.tools_for(agent)
-        if not tools.outbound or not tools.read:
-            continue
-        reads = [
-            r
-            for r in tools.read
-            if tools.graph is None or any(tools.graph.reaches(r.node, o.node) for o in tools.outbound)
-        ] or tools.read
-        for outbound in tools.outbound:
-            # Known HTTP senders are matched on their semantic span type; any
-            # other outbound tool on its tool-call span name.
-            if outbound.name in ("http_post", "http_put", "http_patch"):
-                trigger, trigger_match = outbound.name, []
-            else:
-                trigger = "llm_tool_call"
-                trigger_match = [{"field": "name", "op": "eq", "value": outbound.name}]
-            payload = {
-                "rule_name": _rule_name(f"{outbound.name} after read", obligation, bindings),
-                "description": obligation.source_quote,
-                "priority": 90,
-                "trigger": trigger,
-                "trigger_match": trigger_match,
-                "states": [
-                    {
-                        "semantic_type": "llm_tool_call",
-                        "match": [{"field": "name", "op": "contains", "value": r.name}],
-                    }
-                    for r in reads
-                ],
-                "time_window": 3600,
-                "verdict": VERDICT_BLOCK,
-                "reject_message": _reason(obligation, bindings),
-                "trust_impact": "high",
-            }
+        for tool in bindings.tools_for(agent).outbound:
+            arg = tool.text_arg or next(iter(tool.args), "payload")
             controls.append(
-                Control(
-                    clause_id=obligation.clause_id,
-                    kind=obligation.kind,
-                    type="behavior_rule",
-                    agent_id=agent.id,
-                    payload=payload,
-                    binding={**_binding(outbound), "after": [r.name for r in reads]},
+                _rule(
+                    obligation,
+                    bindings,
+                    agent,
+                    tool,
+                    f"{tool.name} blocked",
+                    [_condition("tool", "activity_type", "equals", tool.name)],
+                    [
+                        TestCase(
+                            label=f"{agent.name} {tool.name}",
+                            input=_tool_event(agent.id, tool, arg, "quarterly summary"),
+                            expect="BLOCK",
+                        ),
+                        TestCase(
+                            label=f"{agent.name} other tool",
+                            input={
+                                "event_type": "ActivityStarted",
+                                "agent_id": agent.id,
+                                "activity_type": "search_documents",
+                                "activity_input": [{"query": "x"}, {"__openbox": {}}],
+                            },
+                            expect="ALLOW",
+                        ),
+                    ],
+                    _binding(tool, None, "send"),
                 )
             )
     return controls
 
 
+def marked_material(obligation: Obligation, bindings: Bindings) -> list[Control]:
+    """Codenames and markings may not appear in anything the agent writes, files or sends.
+
+    One rule per (agent, tool with a free-text argument, marked term): block
+    the call when that argument contains the term.
+    """
+
+    words = sorted({*obligation.marked_terms, *bindings.codenames})
+    controls = []
+    for agent in bindings.other_agents:
+        tools = bindings.tools_for(agent)
+        for tool in [*tools.file, *tools.outbound, *(tools.graph.with_role("writes_internal") if tools.graph else [])]:
+            arg = tool.text_arg
+            if arg is None:
+                continue
+            for word in words:
+                controls.append(
+                    _rule(
+                        obligation,
+                        bindings,
+                        agent,
+                        tool,
+                        f"{tool.name} mentions {word}",
+                        [
+                            _condition("tool", "activity_type", "equals", tool.name),
+                            _condition("term", tool.input_path(arg), "contains", word),
+                        ],
+                        [
+                            TestCase(
+                                label=f"{agent.name} {tool.name} mentions {word}",
+                                input=_tool_event(agent.id, tool, arg, f"Notes on {word} pricing"),
+                                expect="BLOCK",
+                            ),
+                            TestCase(
+                                label=f"{agent.name} {tool.name} plain text",
+                                input=_tool_event(agent.id, tool, arg, "quarterly summary"),
+                                expect="ALLOW",
+                            ),
+                        ],
+                        {**_binding(tool, arg, "mention"), "term": word},
+                    )
+                )
+    return controls
+
+
 def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
-    """Why an enforceable clause yields nothing for these agents' graphs."""
+    """Why an enforceable clause yields no policy rule for these agents."""
 
     notes = []
     if obligation.kind == ControlKind.THIRD_PARTY_DISCLOSURE:
@@ -206,100 +251,46 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
     if obligation.kind == ControlKind.USE_RESTRICTION:
         notes.append(
             f"§{obligation.clause_id} use restriction: whether a task serves the Purpose is not "
-            f"a condition OpenBox can check on a tool call, a span or an output, so no policy "
-            f"is proposed. The access rules keep the material to the covered folder."
+            f"a condition a policy rule can check on a tool call, so no rule is proposed. The "
+            f"access rules keep the material to the covered folder."
         )
+    if obligation.kind == ControlKind.PERSONAL_DATA:
+        notes.append(
+            f"§{obligation.clause_id} personal data: a policy rule matches literal values "
+            f"(equals, contains, starts_with) and cannot recognise a name, email address or "
+            f"card number in free text, so no rule is proposed."
+        )
+    if obligation.kind == ControlKind.MARKED_MATERIAL:
+        words = {*obligation.marked_terms, *bindings.codenames}
+        if not words:
+            notes.append(
+                f"§{obligation.clause_id} marked material: the clause names no marking or "
+                f"codename to match on, so no rule is proposed."
+            )
+        for agent in bindings.other_agents:
+            tools = bindings.tools_for(agent)
+            if not any(t.text_arg for t in [*tools.file, *tools.outbound]):
+                notes.append(
+                    f"§{obligation.clause_id} marked material: {agent.name} has no filing or "
+                    f"sending tool with a free-text argument to check for the markings."
+                )
     if obligation.kind == ControlKind.PERMITTED_RECIPIENTS:
         for agent in bindings.other_agents:
-            readers = [t for t in bindings.tools_for(agent).access if t.document_arg is None]
-            for tool in readers:
-                notes.append(
-                    f"§{obligation.clause_id}: {tool.name}({', '.join(tool.args)}) on {agent.name} "
-                    f"reads material but has no path argument, so it cannot be scoped to a folder."
-                )
+            for tool in bindings.tools_for(agent).access:
+                if tool.document_arg is None:
+                    notes.append(
+                        f"§{obligation.clause_id}: {tool.name}({', '.join(tool.args)}) on "
+                        f"{agent.name} handles material but has no path argument, so it cannot "
+                        f"be scoped to a folder."
+                    )
     return notes
-
-
-def marked_material(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    """Codenames and party names may not appear in any agent's output."""
-
-    words = sorted({*obligation.marked_terms, *bindings.codenames})
-    if not words:
-        return []
-    return [
-        Control(
-            clause_id=obligation.clause_id,
-            kind=obligation.kind,
-            type="guardrail",
-            agent_id=agent.id,
-            payload={
-                "name": _rule_name("marked terms", obligation, bindings),
-                "guardrail_type": GUARDRAIL_BANLIST,
-                "processing_stage": STAGE_OUTPUT,
-                "params": {"banned_words": words, "max_l_dist": 1},
-                "settings": {
-                    "on_fail": ON_FAIL_BLOCK,
-                    "timeout": 5000,
-                    "retry_attempts": 1,
-                    "log_violation": True,
-                },
-                "trust_impact": "medium",
-            },
-            binding={"tool": "every output", "stage": "output"},
-            tests=[
-                TestCase(label="mentions codename", input={"text": words[0]}, expect="BLOCK"),
-                TestCase(label="plain text", input={"text": "quarterly summary"}, expect="ALLOW"),
-            ],
-        )
-        for agent in bindings.other_agents
-    ]
-
-
-def personal_data(obligation: Obligation, bindings: Bindings) -> list[Control]:
-    return [
-        Control(
-            clause_id=obligation.clause_id,
-            kind=obligation.kind,
-            type="guardrail",
-            agent_id=agent.id,
-            payload={
-                "name": _rule_name("personal data", obligation, bindings),
-                "guardrail_type": GUARDRAIL_PII,
-                "processing_stage": STAGE_OUTPUT,
-                "params": {
-                    "entities": ["EMAIL_ADDRESS", "PHONE_NUMBER", "PERSON", "CREDIT_CARD"],
-                    "replace_values": ["[email]", "[phone]", "[name]", "[card]"],
-                },
-                "settings": {
-                    "on_fail": ON_FAIL_BLOCK,
-                    "timeout": 5000,
-                    "retry_attempts": 1,
-                    "log_violation": True,
-                },
-                "trust_impact": "medium",
-            },
-            binding={"tool": "every output", "stage": "output"},
-            tests=[
-                TestCase(
-                    label="contains email",
-                    input={"text": "contact jane.doe@coca-cola.com"},
-                    expect="BLOCK",
-                ),
-                TestCase(label="plain text", input={"text": "integration plan"}, expect="ALLOW"),
-            ],
-        )
-        for agent in bindings.all_agents
-    ]
 
 
 TEMPLATES = {
     ControlKind.PERMITTED_RECIPIENTS: permitted_recipients,
     ControlKind.THIRD_PARTY_DISCLOSURE: third_party_disclosure,
     ControlKind.MARKED_MATERIAL: marked_material,
-    ControlKind.PERSONAL_DATA: personal_data,
-    # USE_RESTRICTION ("solely for the Purpose") has no platform policy: whether
-    # a task serves the Purpose is not a condition on a tool call, a span or an
-    # output. It is reported under not_applicable, never invented.
+    # USE_RESTRICTION and PERSONAL_DATA have no policy-rule expression; see not_applicable().
 }
 
 
@@ -309,10 +300,10 @@ def build_controls(obligation: Obligation, bindings: Bindings) -> list[Control]:
 
 
 def describe(control: Control, bindings: Bindings) -> str:
-    """The control in plain English, for the verifier and the review screen.
+    """The rule in plain English, for the verifier and the review screen.
 
     JEV reads literally, so it is shown what the rule does to whom, not the
-    payload's operators, enum numbers and placeholder ids.
+    payload's operators and placeholder ids.
     """
 
     names = {a.id: a.name for a in bindings.all_agents}
@@ -323,39 +314,28 @@ def describe(control: Control, bindings: Bindings) -> str:
     rep_note = f"; the Representatives are {reps}" if reps else "; no agent is a Representative"
     folders = ", ".join(bindings.covered_folders)
     party = bindings.disclosing_party
-    p = control.payload
     b = control.binding
-    if control.type == "policy_rule":
-        tool = p["conditions"][0]["right"]["value"]
-        what = "file" if b.get("role") == "files_to_store" else "read"
+    tool = b.get("tool")
+    what = b.get("what")
+    if what in ("read", "file"):
         return (
             f"Agent {agent} ({role} under this NDA{rep_note}) is blocked from calling its "
             f"'{tool}' tool to {what} any document whose '{b.get('arg')}' lies under the "
             f"{party} folder {folders}. Documents in other folders are allowed."
         )
-    if control.type == "behavior_rule":
-        reads = ", ".join(b.get("after", []))
+    if what == "send":
         return (
-            f"If agent {agent} has called {reads} within the last {p['time_window'] // 60} "
-            f"minutes, its '{b.get('tool')}' tool (which sends content outside the firm's "
-            f"systems) is blocked."
-        )
-    if p["guardrail_type"] == GUARDRAIL_PII:
-        return (
-            f"Every output agent {agent} produces is scanned for personal data (names, "
-            f"email addresses, phone numbers, card numbers); any output containing such "
-            f"personal data is blocked before delivery."
+            f"Agent {agent} is blocked from calling its '{tool}' tool at all, because that tool "
+            f"sends content outside the firm's systems and the NDA forbids disclosure to third "
+            f"parties. Its other tools are unaffected."
         )
     return (
-        f"Every output agent {agent} produces is scanned for the confidential markings "
-        f"{p['params']['banned_words']}; any output containing one is blocked before delivery."
+        f"Agent {agent} is blocked from calling its '{tool}' tool whenever the '{b.get('arg')}' "
+        f"it passes contains the confidential marking '{b.get('term')}'. Calls without that "
+        f"marking are allowed."
     )
 
 
 def summarize(control: Control, agents: list[AgentBinding]) -> str:
     names = {a.id: a.name for a in agents}
-    p = control.payload
-    return (
-        f"{control.type} on agent {names.get(control.agent_id, control.agent_id)}: "
-        f"{p.get('rule_name') or p.get('name')}"
-    )
+    return f"policy rule on agent {names.get(control.agent_id, control.agent_id)}: {control.payload['rule_name']}"

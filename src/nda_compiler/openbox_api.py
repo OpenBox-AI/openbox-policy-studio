@@ -1,12 +1,11 @@
-"""OpenBox backend client: create a control inactive, prove it, then activate.
+"""OpenBox backend client: create a policy rule inactive, prove it, then activate.
 
 Routes (openbox-backend, NestJS):
+  GET  /agent/:agentId/policy-rule                     list (to retire same-name rules)
   POST /agent/:agentId/policy-rule                     create (is_active:false)
   POST /agent/:agentId/policy-rule/:ver/evaluate       dry-run against an OPA input
   PUT  /agent/:agentId/policy-rule/:ver/status         {is_active}
-  POST /agent/:agentId/behavior-rule                   create
-  POST /guardrails/run-test                            test a guardrail config unsaved
-  POST /agent/:agentId/guardrails                      create
+  GET  /agent/:agentId/logs                            the agent's governance events
 
 Auth is the org key in X-API-Key. With no key a recording fake is used, so the
 pipeline can run and the exact payloads can be inspected before a key exists.
@@ -30,17 +29,13 @@ class OpenBoxBackend(Protocol):
 
 
 class RecordingBackend:
-    """No network. Marks every control as if it passed, keeps the calls."""
+    """No network. Marks every rule as if it passed, keeps the calls."""
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
 
     async def apply(self, control: Control) -> Control:
-        path = {
-            "policy_rule": f"/agent/{control.agent_id}/policy-rule",
-            "behavior_rule": f"/agent/{control.agent_id}/behavior-rule",
-            "guardrail": f"/agent/{control.agent_id}/guardrails",
-        }[control.type]
+        path = f"/agent/{control.agent_id}/policy-rule"
         self.calls.append(("POST", path, control.payload))
         for test in control.tests:
             self.calls.append(("POST", f"{path}/<id>/evaluate", test.input))
@@ -63,11 +58,7 @@ class HttpBackend:
 
     async def apply(self, control: Control) -> Control:
         try:
-            if control.type == "policy_rule":
-                return await self._policy_rule(control)
-            if control.type == "behavior_rule":
-                return await self._behavior_rule(control)
-            return await self._guardrail(control)
+            return await self._policy_rule(control)
         except httpx.HTTPStatusError as exc:
             body = exc.response.text[:300]
             return control.model_copy(
@@ -106,55 +97,6 @@ class HttpBackend:
         for rule in rules or []:
             if rule.get("rule_name") == rule_name and rule.get("is_current_version", True):
                 await self._client.delete(f"{base}/{rule['id']}")
-
-    async def _behavior_rule(self, control: Control) -> Control:
-        created = _unwrap(
-            (await self._post(f"/agent/{control.agent_id}/behavior-rule", control.payload)).json()
-        )
-        return control.model_copy(update={"status": "active", "remote_id": created.get("id")})
-
-    async def _guardrail(self, control: Control) -> Control:
-        p = control.payload
-        for test in control.tests:
-            # The guardrails service scans `output.*` for ActivityCompleted logs.
-            response = await self._client.post(
-                "/guardrails/run-test",
-                json={
-                    "guardrail_type": p["guardrail_type"],
-                    "params": p["params"],
-                    "settings": p["settings"],
-                    "logs": {
-                        "event_type": "ActivityCompleted",
-                        "output": {"text": test.input["text"]},
-                    },
-                },
-            )
-            if response.status_code >= 300:
-                # Guardrails run in a separate service; without it nothing can be
-                # proven, and a guardrail attached to an agent fails closed at runtime.
-                return control.model_copy(
-                    update={
-                        "status": "failed",
-                        "note": f"guardrails service unavailable ({response.status_code}); "
-                        "not applied",
-                    }
-                )
-            result = _unwrap(response.json())
-            if not isinstance(result, dict) or result.get("success") is False:
-                detail = result.get("detail", "") if isinstance(result, dict) else ""
-                return control.model_copy(
-                    update={"status": "failed", "note": f"guardrail test failed: {detail[:160]}"}
-                )
-            blocked = bool(result.get("violations_detected"))
-            if blocked != (test.expect == "BLOCK"):
-                return control.model_copy(
-                    update={
-                        "status": "failed",
-                        "note": f"test '{test.label}' did not {test.expect}",
-                    }
-                )
-        created = _unwrap((await self._post(f"/agent/{control.agent_id}/guardrails", p)).json())
-        return control.model_copy(update={"status": "active", "remote_id": created.get("id")})
 
     async def _post(self, path: str, body: dict[str, Any]) -> httpx.Response:
         response = await self._client.post(path, json=body)

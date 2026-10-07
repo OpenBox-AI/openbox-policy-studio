@@ -122,7 +122,7 @@ select.input{appearance:none;-webkit-appearance:none;height:40px;min-width:260px
 
 /* table (policy-rules-table.tsx) */
 table{width:100%;border-collapse:collapse;table-layout:fixed}
-col.c-policy{width:34%}col.c-type{width:13%}col.c-bind{width:29%}col.c-conf{width:16%}col.c-apply{width:8%}
+col.c-policy{width:34%}col.c-type{width:11%}col.c-bind{width:29%}col.c-conf{width:16%}col.c-apply{width:8%}
 thead tr{background:var(--secondary);border-bottom:1px solid var(--border)}
 th{text-align:left;font-size:12px;font-weight:600;color:var(--muted-fg);padding:10px 16px;white-space:nowrap}
 th.c,td.c{text-align:center}
@@ -239,7 +239,7 @@ tr.held .cb{visibility:hidden}
 
   <div class="metrics">
     <div class="card metric"><div class="icon-box"><svg class="i" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg></div><div><b id="s-clauses">–</b><span>Clauses read</span></div></div>
-    <div class="card metric"><div class="icon-box"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div><div><b id="s-policies">–</b><span>Policies proposed</span></div></div>
+    <div class="card metric"><div class="icon-box"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div><div><b id="s-policies">–</b><span>Policy rules proposed</span></div></div>
     <div class="card metric"><div class="icon-box ok"><svg class="i" viewBox="0 0 24 24"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg></div><div><b id="s-active">–</b><span>Enforced on the agent</span></div></div>
   </div>
 
@@ -254,7 +254,7 @@ tr.held .cb{visibility:hidden}
   <div class="cols">
     <section class="card" id="proposals">
       <div class="card-head">
-        <div><h2>Proposed policies</h2><p id="p-sub">Nothing is created on OpenBox until you apply.</p></div>
+        <div><h2>Proposed policy rules</h2><p id="p-sub">Nothing is created on OpenBox until you apply.</p></div>
         <button class="btn outline sm" id="reset" hidden>Start over</button>
       </div>
       <div class="progress"><i id="bar"></i></div>
@@ -281,7 +281,7 @@ tr.held .cb{visibility:hidden}
       <div id="tablewrap" hidden>
         <table>
           <colgroup><col class="c-policy"><col class="c-type"><col class="c-bind"><col class="c-conf"><col class="c-apply"></colgroup>
-          <thead><tr><th>Policy</th><th>Type</th><th>Binds to</th><th>Confidence</th><th class="c">Apply</th></tr></thead>
+          <thead><tr><th>Policy</th><th>Decision</th><th>Binds to</th><th>Confidence</th><th class="c">Apply</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
         <div class="scope" id="scope"></div>
@@ -383,7 +383,7 @@ async function read(f){
 function fail(msg){$('bar').style.width='0';document.querySelectorAll('.stage').forEach(d=>d.classList.remove('on'));$('p-sub').textContent=msg;drop.querySelector('h3').textContent='Try again';}
 
 /* ── proposals table ── */
-const KIND={policy_rule:['access','Access rule'],behavior_rule:['sequence','Sequence rule'],guardrail:['scan','Output scan']};
+const DECISION={BLOCK:'failed',HALT:'failed',REQUIRE_APPROVAL:'held',CONSTRAIN:'applying',ALLOW:'active'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function bindCell(b){
   if(!b||!b.tool)return '<span class="bind">—</span>';
@@ -403,10 +403,10 @@ function render(d){
   items.forEach(it=>{
     const tr=document.createElement('tr'); tr.className='main'+(it.held?' held':'');
     const conf=it.verify_probability==null?null:Math.round(it.verify_probability*100);
-    const [bc,bl]=it.held?['held','Needs review']:(KIND[it.type]||['',it.type]);
+    const dec=it.held?null:(it.payload.decision||'BLOCK');
     const title=it.held?'No policy proposed':(it.payload.rule_name||it.payload.name||'').replace(/^NDA \S+ §[\d.]+ /,'').replace(/^NDA \S+ /,'');
     tr.innerHTML=`<td><button type="button" class="exp" aria-expanded="false"><span class="chev"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="m9 18 6-6-6-6"/></svg></span><span><span class="name">${esc(title)}</span><span class="desc">§${esc(it.clause_id)}${it.note&&it.note.startsWith('also')?' ('+esc(it.note)+')':''}${it.cl&&it.cl.heading?' · '+esc(it.cl.heading):''}</span></span></button></td>
-      <td><span class="badge ${bc}">${bl}</span></td>
+      <td>${it.held?'<span class="badge held">Needs review</span>':`<span class="badge ${DECISION[dec]||'na'}">${dec}</span>`}</td>
       <td>${it.held?'<span class="bind">—</span>':bindCell(it.binding)}</td>
       <td>${it.held?`<span class="bind never">${esc(it.why)}</span>`:`<div class="conf"><span class="meter"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'%'}</span></div>`}</td>
       <td class="c"><span class="cb" role="checkbox" tabindex="${it.held?-1:0}" aria-checked="false">${it.held?'':''}</span></td>`;
@@ -431,7 +431,6 @@ $('reset').addEventListener('click',()=>location.reload());
 
 /* ── enforced panel ── */
 const ledger=$('ledger');
-const KB={'access rule':['access','Access'],'sequence rule':['sequence','Sequence'],'output scan':['scan','Scan']};
 function row(o){const e=document.createElement('div');e.className='row '+(o.status||'');e.id=o.key||'';
   e.innerHTML=`<div class="t"><span class="nm" title="${esc(o.name)}">${esc(o.name)}</span><span class="badge ${o.bc||'na'}">${esc(o.kind||'')}</span></div>
   <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}`;
@@ -444,7 +443,7 @@ async function loadState(){
     // policy never disappears between "Applying" and the next successful read.
     const keep=[...ledger.querySelectorAll('.row.failed,.row.applying,.row.active[id^="p-"]')]; const names=new Set(s.items.map(i=>i.name));
     ledger.innerHTML=''; keep.filter(e=>!names.has(e.querySelector('.nm').textContent)).forEach(e=>ledger.appendChild(e));
-    s.items.forEach(it=>{const [bc,bl]=KB[it.kind]||['na',it.kind];ledger.appendChild(row({name:it.name,kind:bl,bc,status:'active',label:'Active',opa:it.opa_loaded,key:'r-'+it.id,note:it.note}));});
+    s.items.forEach(it=>{ledger.appendChild(row({name:it.name,kind:it.decision||'BLOCK',bc:DECISION[it.decision]||'failed',status:'active',label:'Active',opa:it.opa_loaded,key:'r-'+it.id,note:it.note}));});
     if(!ledger.children.length)ledger.innerHTML='<div class="empty">No policies enforced on this agent yet.</div>';
   }catch{$('livetxt').textContent='unreachable';$('livedot').className='dot off';$('sidesub').textContent='OpenBox is not reachable.';}
 }
@@ -456,8 +455,8 @@ $('apply').addEventListener('click',async()=>{
   $('apply').disabled=true; $('sub').textContent=`Applying ${chosen.length}…`;
   if(ledger.querySelector('.empty'))ledger.innerHTML='';
   const pending=[];
-  for(const tr of chosen){const i=+tr.dataset.i,c=draft.controls[i];const [bc,bl]=KIND[c.type]||['na',c.type];
-    const e=row({name:c.payload.rule_name||c.payload.name,kind:bl.split(' ')[0],bc,status:'applying',label:'Applying',key:'p-'+i});
+  for(const tr of chosen){const i=+tr.dataset.i,c=draft.controls[i];
+    const e=row({name:c.payload.rule_name,kind:c.payload.decision,bc:DECISION[c.payload.decision]||'failed',status:'applying',label:'Applying',key:'p-'+i});
     ledger.prepend(e); await fly(tr,e); select(tr,false); tr.style.display='none'; tr.nextElementSibling.hidden=true; pending.push({i,e});}
   const r=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft_id:draft.draft_id,selected:pending.map(p=>p.i)})});
   const d=await r.json();

@@ -80,6 +80,7 @@ _FAKE_ROLE_RULES: list[tuple[ToolRole, re.Pattern[str]]] = [
 
 _DOC_ARG_HINT = re.compile(r"document|path|file|destination|target|source|_id$|^id$", re.I)
 _NOT_DOC_ARG = {"query", "content", "agent_slug", "limit", "text", "body", "message"}
+_TEXT_ARGS = ("content", "text", "body", "message", "payload", "report")
 
 
 class ToolSpec(BaseModel):
@@ -102,6 +103,15 @@ class ToolSpec(BaseModel):
                 return arg
         for arg, kind in self.args.items():
             if kind == "string" and arg not in _NOT_DOC_ARG and _DOC_ARG_HINT.search(arg):
+                return arg
+        return None
+
+    @property
+    def text_arg(self) -> str | None:
+        """The argument carrying free text the agent produces (content, body...)."""
+
+        for arg in [*self.observed_args, *self.args]:
+            if arg in _TEXT_ARGS and self.args.get(arg, "string") == "string":
                 return arg
         return None
 

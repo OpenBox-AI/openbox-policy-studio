@@ -49,9 +49,14 @@ async def test_compile_emits_grounded_controls(services):
     assert report.review == []
     assert report.coverage["not_enforceable"] == 3
 
-    policy_rules = [c for c in report.controls if c.type == "policy_rule"]
+    policy_rules = [c for c in report.controls if c.kind == ControlKind.PERMITTED_RECIPIENTS]
     # Two non-representatives x (read + file) x one covered folder.
     assert len(policy_rules) == 4
+    # §4 blocks every outbound tool: this matter has no exported graph, so the
+    # bindings' two outbound tools apply to all three agents.
+    sends = [c for c in report.controls if c.kind == ControlKind.THIRD_PARTY_DISCLOSURE]
+    assert len(sends) == 6
+    assert all(c.binding["what"] == "send" for c in sends)
     rule = policy_rules[0].payload
     assert rule["decision"] == "BLOCK"
     assert rule["is_active"] is False
@@ -67,7 +72,7 @@ async def test_compile_emits_grounded_controls(services):
     # Only platform policy types are ever proposed; the Purpose clause is
     # reported as not applicable rather than turned into something OpenBox
     # cannot store.
-    assert {c.type for c in report.controls} <= {"policy_rule", "behavior_rule", "guardrail"}
+    assert {c.type for c in report.controls} == {"policy_rule"}
     assert any("use restriction" in n for n in report.not_applicable)
 
     calls = services.backend.calls

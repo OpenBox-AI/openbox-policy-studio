@@ -83,11 +83,7 @@ async def openbox_state(matter: str = "trial") -> JSONResponse:
                 )
             except Exception:
                 pass
-            for kind, path, name_key in (
-                ("access rule", "policy-rule", "rule_name"),
-                ("sequence rule", "behavior-rule", "rule_name"),
-                ("output scan", "guardrails", "name"),
-            ):
+            for kind, path, name_key in (("policy", "policy-rule", "rule_name"),):
                 if not key:
                     continue
                 try:
@@ -110,6 +106,7 @@ async def openbox_state(matter: str = "trial") -> JSONResponse:
                             "id": row.get("id"),
                             "name": name,
                             "kind": kind,
+                            "decision": row.get("decision", ""),
                             "clause": f"§{clause}" if clause else "",
                             "agent": agent.name,
                             "opa_loaded": bool(row.get("id") and row["id"] in opa_raw),

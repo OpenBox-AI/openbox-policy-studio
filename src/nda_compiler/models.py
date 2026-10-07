@@ -74,8 +74,8 @@ class Obligation(BaseModel):
     ungrounded: list[str] = Field(default_factory=list)
 
 
-# Exactly the three things OpenBox stores for an agent. Nothing else is proposed.
-ControlType = Literal["policy_rule", "behavior_rule", "guardrail"]
+# One type: a policy rule on the agent's Policies tab. Nothing else is proposed.
+ControlType = Literal["policy_rule"]
 
 
 class TestCase(BaseModel):
