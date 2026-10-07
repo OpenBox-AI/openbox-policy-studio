@@ -9,10 +9,10 @@ description = "Compile an NDA into enforceable OpenBox policies with a governed 
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "anthropic>=0.40.0",
     "fastapi>=0.115.0,<1.0",
     "httpx>=0.28.0",
     "langgraph>=0.2.0",
+    "openai>=1.50.0",
     "langchain-core>=0.3.0",
     "openbox-langgraph-sdk-python>=1.1.0",
     "pydantic>=2.7",

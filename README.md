@@ -6,14 +6,14 @@ in a few seconds.
 
 ```
 parse → classify → extract → build → verify → apply
- code    JEV ×1     Haiku ×n   code    JEV ×n   OpenBox API ×n
+ code    JEV ×1     OpenAI ×n  code    JEV ×n   OpenBox API ×n
 ```
 
 | Stage | What | Who |
 |---|---|---|
 | parse | PDF/DOCX/MD → numbered clauses, definitions section isolated | code |
 | classify | one call, whole NDA as state, a `choice` per clause → control kind | TypeSafe JEV |
-| extract | fill a fixed obligation form; every literal must appear verbatim in the NDA | Claude Haiku 4.5 |
+| extract | fill a fixed obligation form; every literal must appear verbatim in the NDA | OpenAI (`gpt-5-mini`, strict JSON schema) |
 | build | obligation × bindings table → Policy Rule / Behavior Rule / Guardrail / judgement payloads | code |
 | verify | `noul`: does this rule faithfully enforce this clause? below threshold → review | TypeSafe JEV |
 | apply | create inactive → `/evaluate` block + allow case → activate | OpenBox backend |
