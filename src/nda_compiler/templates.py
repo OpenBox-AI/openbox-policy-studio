@@ -355,7 +355,8 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
             )
         for agent in bindings.other_agents:
             tools = bindings.tools_for(agent)
-            if not any(t.text_arg for t in [*tools.file, *tools.outbound]):
+            writers = [*tools.file, *tools.outbound, *(tools.graph.with_role("writes_internal") if tools.graph else [])]
+            if not any(t.text_arg for t in writers):
                 notes.append(
                     f"§{obligation.clause_id} marked material: {agent.name} has no filing or "
                     f"sending tool with a free-text argument to check for the markings."

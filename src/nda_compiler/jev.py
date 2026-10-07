@@ -24,9 +24,10 @@ from .models import Classification, Clause, ControlKind, Obligation
 
 KIND_CRITERIA: dict[str, dict[str, Any]] = {
     ControlKind.PERMITTED_RECIPIENTS.value: {
-        "what": "Limits who inside the receiving organisation may see the information "
-        "(need to know, named representatives, specific teams), or forbids sharing it with "
-        "named outsiders such as competitors.",
+        "what": "Limits who may see the information (need to know, named representatives, "
+        "specific teams), forbids sharing it with named outsiders such as competitors or "
+        "bidders, or allows sub-advisers, contractors or other people access only with the "
+        "disclosing party's consent.",
         "not_for": "Clauses about sending data to external systems, which are "
         "third_party_disclosure.",
         "example": "shall disclose only to its Representatives who have a need to know",

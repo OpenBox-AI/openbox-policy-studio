@@ -128,7 +128,11 @@ class OpenAIExtractor:
         # extraction is a copy task, so reasoning is turned down.
         extra: dict[str, Any] = {"seed": 7}
         if self.model.startswith("gpt-5"):
-            extra["reasoning_effort"] = "minimal"
+            # gpt-5 / gpt-5-mini / gpt-5-nano take "minimal"; gpt-5.1 and later
+            # take "none" .. "xhigh". OPENAI_REASONING overrides either.
+            first_gen = self.model.split("-")[1] in {"5", "5"} and not self.model.startswith("gpt-5.")
+            default = "minimal" if first_gen else "none"
+            extra["reasoning_effort"] = os.environ.get("OPENAI_REASONING", "").strip() or default
         else:
             extra["temperature"] = 0
         response = await self._client.chat.completions.create(
@@ -154,6 +158,12 @@ class OpenAIExtractor:
             },
         )
         payload = json.loads(response.choices[0].message.content or "{}")
+        # A marking is matched with `contains` on the tool's text, so the
+        # quotation marks the clause puts around it must not travel with it.
+        if isinstance(payload.get("marked_terms"), list):
+            payload["marked_terms"] = [
+                t.strip().strip('"“”\'‘’') for t in payload["marked_terms"] if t
+            ]
         return Obligation(
             clause_id=clause.id, kind=kind, **{k: v for k, v in payload.items() if v is not None}
         )
