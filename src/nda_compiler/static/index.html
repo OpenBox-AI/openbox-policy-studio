@@ -15,7 +15,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--ink);color:var(--paper);font:15px/1.5 var(--sans);overflow:hidden}
-#scene{position:fixed;inset:0 var(--side) 0 0;z-index:0}
+#scene{position:fixed;top:0;left:0;width:calc(100vw - var(--side));height:100vh;display:block;z-index:0}
 #stage{position:fixed;inset:0 var(--side) 0 0;z-index:1;overflow:hidden}
 button{font:inherit;cursor:pointer;border:0;border-radius:4px}
 button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
@@ -43,7 +43,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);out
 #progress em{font-style:normal;color:var(--paper)}
 
 /* cards */
-.card{position:absolute;width:290px;background:var(--paper);color:var(--ink);border-radius:5px;padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.4) inset;cursor:pointer;will-change:transform;transform-origin:center;transition:box-shadow .25s}
+.card{position:absolute;width:280px;background:var(--paper);color:var(--ink);border-radius:5px;padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.4) inset;cursor:pointer;will-change:transform;transform-origin:center;transition:box-shadow .25s}
 .card:hover{box-shadow:0 26px 70px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.4) inset}
 .card.sel{box-shadow:0 0 0 3px var(--teal),0 26px 70px rgba(0,0,0,.55)}
 .card.held{background:var(--paper-2);color:var(--graphite);cursor:default}
@@ -51,7 +51,8 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);out
 .card .clause{font:600 13px/1.2 var(--serif);color:var(--graphite)}
 .card .kind{font-size:12px;color:var(--graphite);border:1px solid rgba(20,26,51,.2);border-radius:999px;padding:1px 8px;white-space:nowrap}
 .card .rule{font:500 14px/1.4 var(--sans);margin:0 0 10px}
-.card q{display:block;font:italic 400 13px/1.45 var(--serif);color:var(--graphite);quotes:"“" "”";border-left:2px solid rgba(20,26,51,.18);padding-left:10px;margin:0 0 10px}
+.card q{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font:italic 400 13px/1.45 var(--serif);color:var(--graphite);quotes:"“" "”";border-left:2px solid rgba(20,26,51,.18);padding-left:10px;margin:0 0 10px}
+.card.sel q,.card:hover q{-webkit-line-clamp:unset}
 .card .foot{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--graphite)}
 .ring{--p:0;width:28px;height:28px;border-radius:50%;background:conic-gradient(var(--teal) calc(var(--p)*1%),rgba(20,26,51,.12) 0);display:grid;place-items:center;font-size:10px;font-weight:600;color:var(--ink)}
 .ring::after{content:attr(data-v);background:var(--paper);border-radius:50%;width:21px;height:21px;display:grid;place-items:center}
@@ -87,7 +88,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);out
 .entry .name{font-weight:500;font-size:14px}
 .entry .clause{font:600 12px var(--serif);color:var(--mist)}
 .entry .st{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--mist)}
-.entry .st i{width:8px;height:8px;border-radius:50%;background:var(--mist);display:inline-block}
+.entry .st i{width:8px;height:8px;border-radius:50%;background:var(--mist);display:inline-block;flex:none}
 .entry.applying .st i{background:var(--amber);animation:pulse 1s infinite}
 .entry.active .st i{background:var(--teal)}
 .entry.failed .st i{background:var(--seal)}
@@ -175,10 +176,12 @@ const scan = new THREE.Mesh(new THREE.PlaneGeometry(3.2, .06), new THREE.MeshBas
 scan.position.z = .03; scene.add(scan);
 
 let state = 'idle', t0 = performance.now(), scatter = 0;
-function resize(){ const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w,h,false); cam.aspect = w/h; cam.updateProjectionMatrix(); }
+function resize(){ const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+  if (canvas.width !== Math.floor(w*renderer.getPixelRatio()) || canvas.height !== Math.floor(h*renderer.getPixelRatio())){ renderer.setSize(w,h,false); cam.aspect = w/h; cam.updateProjectionMatrix(); } }
 addEventListener('resize', resize); resize();
 
 function frame(){
+  resize();
   const t = (performance.now()-t0)/1000;
   // motes drift
   const p = motesGeo.attributes.position.array;
@@ -243,7 +246,7 @@ function dealCards(d){
   Object.keys(held).forEach(id => items.push({held:true, clause_id:id, cl:byId[id], why:held[id]}));
   const cx = W/2, cy = H/2, n = items.length;
   scatter = 1;
-  items.forEach((it, k) => {
+  const made = items.map((it, k) => {
     const el = document.createElement('div');
     el.className = 'card' + (it.held?' held':'');
     const conf = it.verify_probability==null ? null : Math.round(it.verify_probability*100);
@@ -256,16 +259,24 @@ function dealCards(d){
          <div class="foot"><span class="ring" style="--p:${conf||0}" data-v="${conf==null?'–':'.'+String(conf).padStart(2,'0')}"></span><span>judge confidence</span><span class="tick">${it.verify_probability>=.8?'✓':''}</span></div>`;
     if (!it.held){ if (it.verify_probability>=.8) el.classList.add('sel'); el.tabIndex = 0;
       el.addEventListener('click', () => toggle(el)); el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(el);} }); }
-    // target spot: a loose ring around centre, slight rotation
-    const ang = (k/n)*Math.PI*2 - Math.PI/2 + (Math.random()-.5)*.4, r = Math.min(W,H)*.33 + (Math.random()-.5)*60;
-    const tx = cx + Math.cos(ang)*r - 145, ty = cy + Math.sin(ang)*r*0.78 - 110, rot = (Math.random()-.5)*6;
-    el.style.left = (cx-145)+'px'; el.style.top = (cy-110)+'px'; el.style.transform = 'scale(.4) rotate(0deg)'; el.style.opacity = 0;
-    stage.appendChild(el);
-    el.dataset.i = it.i; el.dataset.rot = rot; el.dataset.tx = tx; el.dataset.ty = ty;
+    el.style.left = (cx-140)+'px'; el.style.top = (cy-110)+'px'; el.style.transform = 'scale(.4)'; el.style.opacity = 0;
+    stage.appendChild(el); el.dataset.i = it.i; cards.push(el);
+    return el;
+  });
+  // Lay out on a two-row constellation using the real card heights, so no card
+  // covers another's checkbox. Header stays clear above, the seal bar below.
+  const rows = n > 3 ? 2 : 1, cols = Math.ceil(n/rows);
+  const cardH = Math.max(...made.map(e => e.offsetHeight)), gapY = 18;
+  const top0 = 168, bottom = H - 96, avail = bottom - top0;
+  const need = rows*cardH + (rows-1)*gapY, sc = Math.min(1, avail/need);
+  const colW = Math.min(312, (W-56)/cols), gridW = cols*colW, left0 = (W-gridW)/2 + (colW-280)/2;
+  made.forEach((el, k) => {
+    const col = k % cols, row = Math.floor(k/cols);
+    const tx = left0 + col*colW + (Math.random()-.5)*14 + (row%2)*18;
+    const ty = top0 + row*(cardH*sc+gapY) + (Math.random()-.5)*10, rot = (Math.random()-.5)*3;
     const delay = reduce ? 0 : 120 + k*110;
     setTimeout(() => { el.style.transition = reduce ? 'none' : 'transform .9s cubic-bezier(.2,.9,.2,1.05), opacity .5s, left .9s cubic-bezier(.2,.9,.2,1.05), top .9s cubic-bezier(.2,.9,.2,1.05)';
-      el.style.opacity = 1; el.style.left = tx+'px'; el.style.top = ty+'px'; el.style.transform = `scale(1) rotate(${rot}deg)`; }, delay);
-    cards.push(el);
+      el.style.transformOrigin = 'top left'; el.style.opacity = 1; el.style.left = tx+'px'; el.style.top = ty+'px'; el.style.transform = `scale(${sc}) rotate(${rot}deg)`; }, delay);
   });
   // ghosts
   const scope = d.classifications.filter(c => c.kind==='not_enforceable').map(c => byId[c.clause_id]);
@@ -288,8 +299,12 @@ async function loadState(){
   try { const r = await fetch(`/openbox/state?matter=${MATTER}`); const s = await r.json();
     $('agentname').textContent = s.agent_name; $('sidesub').textContent = `Policies enforced on ${s.agent_name} right now.`;
     $('livetxt').textContent = `${s.backend} · ${s.items.length} active`;
-    const existing = s.items;
-    if (existing.length){ ledger.innerHTML = ''; existing.forEach(it => ledger.appendChild(entry({name:it.name, clause:it.clause, status:'active', label:it.kind, opa:it.opa_loaded, key:'r-'+it.id}))); }
+    const keep = [...ledger.querySelectorAll('.entry.failed, .entry.applying')];
+    const names = new Set(s.items.map(it => it.name));
+    ledger.innerHTML = '';
+    keep.filter(e => !names.has(e.querySelector('.name').textContent)).forEach(e => ledger.appendChild(e));
+    s.items.forEach(it => ledger.appendChild(entry({name:it.name, clause:it.clause, status:'active', label:'active on OpenBox', opa:it.opa_loaded, key:'r-'+it.id})));
+    if (!ledger.children.length) ledger.innerHTML = '<div class="empty">Nothing enforced yet.</div>';
     return s;
   } catch { $('livetxt').textContent = 'OpenBox unreachable'; }
 }
@@ -317,7 +332,7 @@ $('apply').addEventListener('click', async () => {
   cards = cards.filter(c => !c.dataset.gone); updateCount();
   if (!cards.length) $('applybar').classList.remove('show');
   // OPA picks the bundle up on its next poll; re-read state a few times
-  [8000, 20000, 35000].forEach(ms => setTimeout(loadState, ms));
+  [1500, 10000, 25000, 40000].forEach(ms => setTimeout(loadState, ms));
 });
 function setEntry(e, status, note){ e.className = 'entry '+status; e.querySelector('.s').textContent = status==='active' ? 'active on OpenBox' : status==='failed' ? 'not applied' : status;
   if (note){ const n = document.createElement('div'); n.className='note'; n.textContent = note; e.appendChild(n); } }

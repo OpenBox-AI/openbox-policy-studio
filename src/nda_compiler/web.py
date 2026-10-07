@@ -24,7 +24,6 @@ from pydantic import BaseModel
 
 from .bindings import load_bindings
 from .extract import extractor_from_env
-from .governance import maybe_govern
 from .graph import Services, build_graph, compile_nda
 from .jev import judge_from_env
 from .models import CompileReport
@@ -104,6 +103,13 @@ async def openbox_state(matter: str = "trial") -> JSONResponse:
                             "opa_loaded": bool(row.get("id") and row["id"] in opa_raw),
                         }
                     )
+    # A rule being replaced can briefly list two current versions; show one.
+    seen: set[tuple[str, str]] = set()
+    items = [
+        it
+        for it in items
+        if not ((it["agent"], it["name"]) in seen or seen.add((it["agent"], it["name"])))
+    ]
     return JSONResponse(
         {
             "agent_name": ", ".join(a.name for a in bindings.all_agents),
@@ -134,7 +140,10 @@ async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONR
     # Propose only: a recording backend means nothing is created yet.
     services = Services(judge_from_env(), extractor_from_env(), RecordingBackend(), bindings)
     try:
-        report = await compile_nda(source, services, maybe_govern(build_graph(services)))
+        # Propose is read-only, so the graph runs bare here. Governing the compiler
+        # itself (the CLI path) re-instruments the process per handler, which does
+        # not suit a long-lived server.
+        report = await compile_nda(source, services, build_graph(services))
     finally:
         source.unlink(missing_ok=True)
     # Reset the recording backend's pretend statuses; the officer decides.
