@@ -180,6 +180,10 @@ tr.held .cb{visibility:hidden}
 .row .opa{margin-left:auto;display:inline-flex;align-items:center;gap:4px;color:var(--muted-fg)}
 .row.opa .opa{color:var(--ok-fg)}
 .row .why{font-size:12px;color:var(--muted-fg);margin-top:6px}
+.row .when{font-size:12px;color:var(--muted-fg)}
+.row.fresh{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+.row .open{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:12px;color:var(--primary-700);text-decoration:none}
+.row .open:hover{text-decoration:underline}
 .row.failed .why{color:var(--err-fg)}
 .row.applying .dot{background:var(--info);animation:pulse 1s infinite}
 .empty{color:var(--muted-fg);font-size:13px;padding:32px 16px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-md)}
@@ -431,9 +435,12 @@ $('reset').addEventListener('click',()=>location.reload());
 
 /* ── enforced panel ── */
 const ledger=$('ledger');
+const FE_URL='http://localhost:3233';
+const agentUrl=id=>id?`${FE_URL}/agents/${id}?tab=authorize&subtab=policies`:'';
+function ago(iso){if(!iso)return '';const s=Math.max(0,(Date.now()-Date.parse(iso))/1000);if(s<60)return `created ${Math.round(s)} s ago`;if(s<3600)return `created ${Math.round(s/60)} min ago`;if(s<86400)return `created ${Math.round(s/3600)} h ago`;return 'created '+new Date(iso).toLocaleDateString();}
 function row(o){const e=document.createElement('div');e.className='row '+(o.status||'');e.id=o.key||'';
   e.innerHTML=`<div class="t"><span class="nm" title="${esc(o.name)}">${esc(o.name)}</span><span class="badge ${o.bc||'na'}">${esc(o.kind||'')}</span></div>
-  <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}`;
+  <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="when">${o.when?esc(o.when):''}</span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}${o.href?`<a class="open" href="${o.href}" target="_blank" rel="noopener">Open in OpenBox<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>`:''}`;
   if(o.opa)e.classList.add('opa'); return e;}
 async function loadState(){
   try{const r=await fetch(`/openbox/state?matter=${MATTER}`);const s=await r.json();
@@ -443,7 +450,7 @@ async function loadState(){
     // policy never disappears between "Applying" and the next successful read.
     const keep=[...ledger.querySelectorAll('.row.failed,.row.applying,.row.active[id^="p-"]')]; const names=new Set(s.items.map(i=>i.name));
     ledger.innerHTML=''; keep.filter(e=>!names.has(e.querySelector('.nm').textContent)).forEach(e=>ledger.appendChild(e));
-    s.items.forEach(it=>{ledger.appendChild(row({name:it.name,kind:it.decision||'BLOCK',bc:DECISION[it.decision]||'failed',status:'active',label:'Active',opa:it.opa_loaded,key:'r-'+it.id,note:it.note}));});
+    s.items.forEach(it=>{const fresh=it.created_at&&(Date.now()-Date.parse(it.created_at))<120000;const e=row({name:it.name,kind:it.decision||'BLOCK',bc:DECISION[it.decision]||'failed',status:'active',label:fresh?'Active · new version':'Active',opa:it.opa_loaded,key:'r-'+it.id,note:it.note,when:ago(it.created_at),href:agentUrl(it.agent_id)});if(fresh)e.classList.add('fresh');ledger.appendChild(e);});
     if(!ledger.children.length)ledger.innerHTML='<div class="empty">No policies enforced on this agent yet.</div>';
   }catch{$('livetxt').textContent='unreachable';$('livedot').className='dot off';$('sidesub').textContent='OpenBox is not reachable.';}
 }
@@ -461,7 +468,7 @@ $('apply').addEventListener('click',async()=>{
   const r=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft_id:draft.draft_id,selected:pending.map(p=>p.i)})});
   const d=await r.json();
   if(!r.ok){pending.forEach(p=>setRow(p.e,'failed',d.detail||'Apply failed'));$('sub').textContent='Could not apply';return;}
-  d.results.forEach(res=>{const p=pending.find(p=>p.i===res.index);if(p)setRow(p.e,res.status,res.note);});
+  d.results.forEach(res=>{const p=pending.find(p=>p.i===res.index);if(p)setRow(p.e,res.status,res.note||(res.status==='active'?`Created as version ${(res.remote_id||'').slice(0,8)} and activated.`:''));});
   rows=rows.filter(r=>r.style.display!=='none'); updateCount();
   const stored=d.results.filter(x=>x.status==='active').length, failed=d.results.length-stored;
   $('sub').textContent=[stored?`${stored} active on OpenBox`:'',failed?`${failed} not applied`:''].filter(Boolean).join(' · ');
