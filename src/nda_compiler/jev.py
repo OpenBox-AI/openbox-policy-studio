@@ -19,6 +19,7 @@ import os
 import re
 from typing import Any, Protocol
 
+from .agent_graph import ROLE_CRITERIA, ToolSpec, fake_roles
 from .models import Classification, Clause, ControlKind
 
 KIND_CRITERIA: dict[str, dict[str, Any]] = {
@@ -94,11 +95,16 @@ class Judge(Protocol):
         self, clause: Clause, control_payload: dict[str, Any], summary: str
     ) -> float: ...
 
+    async def classify_tools(self, tools: list[ToolSpec]) -> dict[str, tuple[str, float]]: ...
+
 
 class FakeJudge:
     """Keyword stand-in used when no TypeSafe key is set."""
 
     model = "fake-judge"
+
+    async def classify_tools(self, tools: list[ToolSpec]) -> dict[str, tuple[str, float]]:
+        return fake_roles(tools)
 
     async def classify(self, nda_text: str, clauses: list[Clause]) -> list[Classification]:
         out = []
@@ -121,6 +127,40 @@ class TypeSafeJudge:
 
         self._client = AsyncTypeSafeClient(api_key=api_key)
         self.model = model
+
+    async def classify_tools(self, tools: list[ToolSpec]) -> dict[str, tuple[str, float]]:
+        """One choice per tool: what does calling it do with the material?
+
+        Judged from the tool's name, description and argument names, which is
+        all an operator reviewing the agent's graph would have too.
+        """
+
+        from typesafe_sdk import Choice
+
+        if not tools:
+            return {}
+        questions = {
+            f"tool_{i}": Choice(
+                instructions={
+                    "what": f"What does the tool '{tool.name}' do with the material it handles?",
+                    "tool": f"{tool.name}({', '.join(tool.args)}): {tool.description}",
+                },
+                criteria=ROLE_CRITERIA,
+            )
+            for i, tool in enumerate(tools)
+        }
+        result = await self._client.system_one(
+            {"agent_tools": [f"{t.name}: {t.description}" for t in tools]},
+            questions,
+            model=self.model,
+        )
+        return {
+            tool.name: (
+                result.choices[f"tool_{i}"].choice,
+                float(result.choices[f"tool_{i}"].confidence),
+            )
+            for i, tool in enumerate(tools)
+        }
 
     async def classify(self, nda_text: str, clauses: list[Clause]) -> list[Classification]:
         from typesafe_sdk import Choice

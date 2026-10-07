@@ -1,0 +1,171 @@
+{
+  "agent_id": "16e4c8e5-0921-4946-ae5b-96fe1966e57d",
+  "name": "compliance agent",
+  "nodes": [
+    "__start__",
+    "schedule_search",
+    "search_documents",
+    "select_candidate",
+    "read_document",
+    "record_read",
+    "synthesize",
+    "schedule_write",
+    "write_briefing",
+    "record_write",
+    "schedule_upload",
+    "upload_document",
+    "record_upload",
+    "__end__"
+  ],
+  "edges": [
+    {
+      "source": "__start__",
+      "target": "schedule_search",
+      "conditional": false
+    },
+    {
+      "source": "read_document",
+      "target": "record_read",
+      "conditional": false
+    },
+    {
+      "source": "record_read",
+      "target": "schedule_search",
+      "conditional": true
+    },
+    {
+      "source": "record_read",
+      "target": "synthesize",
+      "conditional": true
+    },
+    {
+      "source": "record_upload",
+      "target": "__end__",
+      "conditional": true
+    },
+    {
+      "source": "record_upload",
+      "target": "schedule_upload",
+      "conditional": true
+    },
+    {
+      "source": "record_write",
+      "target": "__end__",
+      "conditional": true
+    },
+    {
+      "source": "record_write",
+      "target": "schedule_upload",
+      "conditional": true
+    },
+    {
+      "source": "schedule_search",
+      "target": "search_documents",
+      "conditional": false
+    },
+    {
+      "source": "schedule_upload",
+      "target": "upload_document",
+      "conditional": false
+    },
+    {
+      "source": "schedule_write",
+      "target": "write_briefing",
+      "conditional": false
+    },
+    {
+      "source": "search_documents",
+      "target": "select_candidate",
+      "conditional": false
+    },
+    {
+      "source": "select_candidate",
+      "target": "read_document",
+      "conditional": true
+    },
+    {
+      "source": "select_candidate",
+      "target": "schedule_search",
+      "conditional": true
+    },
+    {
+      "source": "select_candidate",
+      "target": "synthesize",
+      "conditional": true
+    },
+    {
+      "source": "synthesize",
+      "target": "schedule_write",
+      "conditional": false
+    },
+    {
+      "source": "upload_document",
+      "target": "record_upload",
+      "conditional": false
+    },
+    {
+      "source": "write_briefing",
+      "target": "record_write",
+      "conditional": false
+    }
+  ],
+  "tools": [
+    {
+      "name": "search_documents",
+      "description": "Search document metadata for a business research query.",
+      "args": {
+        "query": "string",
+        "limit": "integer"
+      },
+      "node": "search_documents",
+      "role": "other",
+      "role_confidence": null,
+      "observed": 0,
+      "observed_args": [],
+      "input_shape": ""
+    },
+    {
+      "name": "read_document",
+      "description": "Read one document selected from search results.",
+      "args": {
+        "document_id": "string"
+      },
+      "node": "read_document",
+      "role": "other",
+      "role_confidence": null,
+      "observed": 0,
+      "observed_args": [],
+      "input_shape": ""
+    },
+    {
+      "name": "write_briefing",
+      "description": "Write a completed client-intelligence briefing for one agent.",
+      "args": {
+        "agent_slug": "string",
+        "content": "string"
+      },
+      "node": "write_briefing",
+      "role": "other",
+      "role_confidence": null,
+      "observed": 0,
+      "observed_args": [],
+      "input_shape": ""
+    },
+    {
+      "name": "upload_document",
+      "description": "File this agent's staged report at one matter/client destination.",
+      "args": {
+        "destination_document_id": "string"
+      },
+      "node": "upload_document",
+      "role": "other",
+      "role_confidence": null,
+      "observed": 0,
+      "observed_args": [],
+      "input_shape": ""
+    }
+  ],
+  "sources": [
+    "introspected"
+  ]
+}

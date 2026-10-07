@@ -96,6 +96,9 @@ class Control(BaseModel):
     )
     remote_id: str | None = None
     note: str = ""
+    # Where on the agent's graph the control bites: tool, argument, node,
+    # how often that tool has been seen live. Display and audit, not payload.
+    binding: dict[str, Any] = Field(default_factory=dict)
 
 
 class StageTiming(BaseModel):
@@ -111,6 +114,8 @@ class CompileReport(BaseModel):
     obligations: list[Obligation]
     controls: list[Control]
     review: list[str] = Field(default_factory=list)
+    # Enforceable clauses the agent's graph gives no tool for, and why.
+    not_applicable: list[str] = Field(default_factory=list)
     timings: list[StageTiming] = Field(default_factory=list)
     models: dict[str, str] = Field(default_factory=dict)
 

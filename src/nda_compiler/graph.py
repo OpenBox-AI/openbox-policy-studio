@@ -1,23 +1,29 @@
 """The compiler as a LangGraph graph.
 
-    parse → classify → extract → build → verify → apply
+    map → parse → classify → extract → build → verify → apply
 
-Each node fans out internally (asyncio.gather) over clauses or controls, so
-wall-clock is one round trip per stage, not one per clause. Every node records
-its own timing; the report shows where the seconds went.
+`map` reads the governed agent's own graph (its tools, their arguments, what
+each does) and folds in what OpenBox has already observed the agent calling,
+so every later template binds to real tool calls. Each node fans out
+internally (asyncio.gather) over clauses or controls, so wall-clock is one
+round trip per stage, not one per clause. Every node records its own timing;
+the report shows where the seconds went.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import time
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
 from . import pdf
+from .agent_graph import AgentGraph, observe, with_roles
 from .bindings import Bindings
 from .extract import Extractor, extract_all
 from .jev import Judge, verify_all
@@ -31,7 +37,9 @@ from .models import (
     StageTiming,
 )
 from .openbox_api import OpenBoxBackend, apply_all
-from .templates import build_controls, describe, summarize
+from .templates import build_controls, describe, not_applicable, summarize
+
+EventSource = Callable[[str], Awaitable[list[dict[str, Any]]]]
 
 
 class CompileState(TypedDict, total=False):
@@ -43,6 +51,7 @@ class CompileState(TypedDict, total=False):
     obligations: list[Obligation]
     controls: list[Control]
     review: list[str]
+    not_applicable: list[str]
     timings: list[StageTiming]
 
 
@@ -54,16 +63,33 @@ class Services:
         backend: OpenBoxBackend,
         bindings: Bindings,
         verify_threshold: float | None = None,
+        events: EventSource | None = None,
     ) -> None:
         self.judge = judge
         self.extractor = extractor
         self.backend = backend
         self.bindings = bindings
+        self.events = events
         self.verify_threshold = (
             verify_threshold
             if verify_threshold is not None
             else float(os.environ.get("VERIFY_THRESHOLD", "0.8"))
         )
+        # Tool roles depend on the tool, not the NDA; judged once per process.
+        self._roles: dict[str, tuple[str, float]] = {}
+
+    async def map_agent(self, graph: AgentGraph) -> AgentGraph:
+        """One agent's graph with live observations folded in and roles judged."""
+
+        if self.events is not None:
+            try:
+                graph = observe(await self.events(graph.agent_id), graph)
+            except Exception:
+                pass  # the static graph still stands; observation is a bonus
+        missing = [t for t in graph.tools if t.name not in self._roles]
+        if missing:
+            self._roles.update(await self.judge.classify_tools(missing))
+        return with_roles(graph, self._roles)
 
 
 def _timed(stage: str, state: CompileState, started: float, update: dict[str, Any]) -> dict:
@@ -75,6 +101,14 @@ def _timed(stage: str, state: CompileState, started: float, update: dict[str, An
 
 
 def build_graph(services: Services):
+    async def map_tools(state: CompileState) -> dict:
+        started = time.perf_counter()
+        graphs = services.bindings.graphs
+        mapped = await asyncio.gather(*(services.map_agent(g) for g in graphs.values()))
+        for graph in mapped:
+            graphs[graph.agent_id] = graph
+        return _timed("map", state, started, {})
+
     async def parse(state: CompileState) -> dict:
         started = time.perf_counter()
         text, clauses = pdf.load(Path(state["source"]))
@@ -109,12 +143,16 @@ def build_graph(services: Services):
     async def build(state: CompileState) -> dict:
         started = time.perf_counter()
         controls: list[Control] = []
+        skipped: list[str] = []
         # Sub-clauses often restate one duty (§2.1 and §2.2 both limiting access);
         # an identical control is proposed once and credits every clause.
         seen: dict[str, Control] = {}
         for obligation in state["obligations"]:
             if obligation.ungrounded:
                 continue
+            for note in not_applicable(obligation, services.bindings):
+                if note not in skipped:
+                    skipped.append(note)
             for control in build_controls(obligation, services.bindings):
                 body = {
                     k: v
@@ -129,7 +167,7 @@ def build_graph(services: Services):
                     continue
                 seen[key] = control
                 controls.append(control)
-        return _timed("build", state, started, {"controls": controls})
+        return _timed("build", state, started, {"controls": controls, "not_applicable": skipped})
 
     async def verify(state: CompileState) -> dict:
         started = time.perf_counter()
@@ -169,6 +207,7 @@ def build_graph(services: Services):
 
     builder = StateGraph(CompileState)
     for name, node in (
+        ("map", map_tools),
         ("parse", parse),
         ("classify", classify),
         ("extract", extract),
@@ -177,7 +216,8 @@ def build_graph(services: Services):
         ("apply", apply),
     ):
         builder.add_node(name, node)
-    builder.add_edge(START, "parse")
+    builder.add_edge(START, "map")
+    builder.add_edge("map", "parse")
     builder.add_edge("parse", "classify")
     builder.add_edge("classify", "extract")
     builder.add_edge("extract", "build")
@@ -198,6 +238,7 @@ async def compile_nda(source: Path, services: Services, graph=None) -> CompileRe
         obligations=state["obligations"],
         controls=state["controls"],
         review=state.get("review", []),
+        not_applicable=state.get("not_applicable", []),
         timings=state.get("timings", []),
         models={"judge": services.judge.model, "extractor": services.extractor.model},
     )

@@ -91,6 +91,25 @@ select.chip{background:var(--panel-2);font:inherit;font-size:12px;padding:3px 26
 .card.sel .cb{background:var(--accent);border-color:var(--accent)}
 .note{color:var(--warn);font-size:12px}
 
+/* agent graph */
+#graph{border:1px solid var(--line);border-radius:var(--r);background:rgba(20,26,38,.6);padding:12px 14px;margin:0 0 20px;display:none}
+#graph.show{display:block}
+#graph .gh{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:10px}
+#graph .gh b{color:var(--text);font-weight:500}
+#graph .gh .src{margin-left:auto}
+.chain{display:flex;align-items:center;flex-wrap:wrap;gap:4px 0}
+.node{font-size:12px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);color:var(--faint);white-space:nowrap}
+.node.tool{color:var(--text);border-color:var(--line-2);background:var(--panel-2);display:flex;align-items:center;gap:6px}
+.node.tool .role{font-size:11px;color:var(--muted)}
+.node.tool .n{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.node.bound{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+.node.bound .role{color:#A5B4FC}
+.arrow{width:16px;height:1px;background:var(--line-2);margin:0 2px;position:relative;flex:none}
+.arrow.cond{background:repeating-linear-gradient(90deg,var(--line-2) 0 3px,transparent 3px 6px)}
+.card .bind{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--muted)}
+.card .bind code{font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#A5B4FC;background:rgba(99,102,241,.1);border-radius:4px;padding:2px 6px}
+.card .bind .n{color:var(--faint)}
+
 /* out of scope */
 #scope{margin-top:22px;color:var(--muted);font-size:13px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 #scope.show{display:flex}
@@ -158,7 +177,13 @@ select.chip{background:var(--panel-2);font:inherit;font-size:12px;padding:3px 26
     </div>
   </div>
 
+  <div id="graph">
+    <div class="gh"><b id="g-name">Agent graph</b><span id="g-sum">reading…</span><span class="src" id="g-src"></span></div>
+    <div class="chain" id="chain"></div>
+  </div>
+
   <div id="stages">
+    <div class="stage" data-s="map"><span>Map tools</span><em></em><i></i></div>
     <div class="stage" data-s="parse"><span>Parse</span><em></em><i></i></div>
     <div class="stage" data-s="classify"><span>Classify</span><em></em><i></i></div>
     <div class="stage" data-s="extract"><span>Extract</span><em></em><i></i></div>
@@ -237,11 +262,35 @@ drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDe
 $('pick').addEventListener('click',e=>{e.preventDefault();file.click();});
 file.addEventListener('change',()=>{if(file.files[0])read(file.files[0]);});
 
+/* ── agent graph: what the SDK governs, straight from the compiled LangGraph ── */
+const ROLE={reads_material:'reads',searches_index:'searches',writes_internal:'drafts',files_to_store:'files',sends_outbound:'sends out',other:''};
+let GRAPHS=[];
+function renderGraph(gs){
+  GRAPHS=gs; const g=gs[0]; if(!g){$('graph').classList.remove('show');return;}
+  const tools=Object.fromEntries(g.tools.map(t=>[t.name,t])); const byNode={}; g.tools.forEach(t=>{if(t.node)byNode[t.node]=t;});
+  const edges=new Map(g.edges.map(e=>[e.source+'>'+e.target,e.conditional]));
+  const chain=$('chain'); chain.innerHTML='';
+  g.order.forEach((n,i)=>{
+    if(i){const a=document.createElement('span');const prev=g.order[i-1];a.className='arrow'+(edges.get(prev+'>'+n)===true?' cond':'');chain.appendChild(a);}
+    const t=byNode[n]; const el=document.createElement('span'); el.className='node'+(t?' tool':''); el.dataset.tool=t?t.name:'';
+    el.innerHTML=t?`<span>${t.name}</span><span class="role">${ROLE[t.role]||''}</span>${t.observed?`<span class="n" title="calls seen on OpenBox">×${t.observed}</span>`:''}`:n;
+    if(t)el.title=`${t.name}(${Object.keys(t.args).join(', ')})\n${t.description}${t.document_arg?`\npath argument: ${t.document_arg}`:''}\ninput: ${t.input_shape||'list'}`;
+    chain.appendChild(el);
+  });
+  const seen=g.tools.reduce((s,t)=>s+t.observed,0);
+  $('g-name').textContent=`${g.name} · ${g.tools.length} tools, ${g.nodes.length-2} nodes`;
+  $('g-sum').textContent=`roles judged from each tool's name, description and arguments`;
+  $('g-src').textContent=g.sources.includes('observed')?`${seen} live calls folded in`:'compiled graph only';
+  $('graph').classList.add('show');
+}
+function markBound(controls){document.querySelectorAll('.node.tool').forEach(el=>el.classList.toggle('bound',controls.some(c=>c.binding&&(c.binding.tool===el.dataset.tool||(c.binding.tools||[]).includes(el.dataset.tool)))));}
+fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(renderGraph).catch(()=>{});
+
 let draft=null, cards=[];
-const ORDER=['parse','classify','extract','verify'];
+const ORDER=['map','parse','classify','extract','verify'];
 function setStage(s){document.querySelectorAll('.stage').forEach(d=>d.classList.toggle('on',d.dataset.s===s));}
 async function read(f){
-  drop.hidden=true; $('stages').classList.add('show'); setStage('parse');
+  drop.hidden=true; $('stages').classList.add('show'); setStage('map');
   let i=0; const tick=setInterval(()=>{i=Math.min(i+1,ORDER.length-1);setStage(ORDER[i]);},900);
   const fd=new FormData(); fd.append('nda',f); fd.append('matter',MATTER);
   const t0=performance.now(); let res,body;
@@ -251,7 +300,8 @@ async function read(f){
   draft=body;
   body.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.classList.remove('on');el.querySelector('em').textContent=Math.round(x.ms)+' ms';}});
   $('stats').hidden=false; $('s-clauses').textContent=body.coverage.clauses; $('s-policies').textContent=body.controls.length; $('s-time').textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
-  render(body);
+  if(body.graphs&&body.graphs.length)renderGraph(body.graphs);
+  render(body); markBound(body.controls);
 }
 function fail(msg){drop.hidden=false;$('stages').classList.remove('show');drop.querySelector('h2').textContent=msg;drop.querySelector('p').textContent='Drop the file again to retry.';}
 
@@ -270,14 +320,26 @@ function render(d){
     el.innerHTML=`<div class="top"><span class="badge ${bc}">${bl}</span><span class="sec">§${it.clause_id}${it.note&&it.note.startsWith('also')?' ('+it.note+')':''}${it.cl.heading?' · '+it.cl.heading:''}</span></div>
       <p class="rule">${it.held?'No policy proposed: the extraction paraphrased this clause instead of quoting it.':it.description}</p>
       <p class="quote">${it.cl.text}</p>
+      ${bindRow(it)}
       ${it.held?`<div class="note">${it.why}</div>`:`<div class="foot"><span class="meter" title="judge confidence"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'% confidence'}</span><span class="cb">${it.verify_probability>=.8?'✓':''}</span></div>`}`;
     if(!it.held){el.tabIndex=0;el.dataset.i=it.i;if(it.verify_probability>=.8)el.classList.add('sel');
       el.addEventListener('click',()=>toggle(el));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(el);}});cards.push(el);}
     grid.appendChild(el); setTimeout(()=>el.classList.add('in'),reduce?0:60*k);
   });
   const scope=d.classifications.filter(c=>c.kind==='not_enforceable').map(c=>byId[c.clause_id]);
-  const sc=$('scope'); if(scope.length){sc.innerHTML=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${c.id} ${c.heading}</span>`).join('');sc.classList.add('show');}
+  const sc=$('scope'); let html='';
+  if(scope.length)html+=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${c.id} ${c.heading}</span>`).join('');
+  (d.not_applicable||[]).forEach(n=>{const m=n.match(/^§([\d.]+)/);html+=`<span style="flex-basis:100%"></span><span class="chip" title="${n.replace(/"/g,'&quot;')}">§${m?m[1]:''} not applicable to this agent</span><span>${n.replace(/^§[\d.]+[^:]*:\s*/,'')}</span>`;});
+  if(html){sc.innerHTML=html;sc.classList.add('show');}
   updateCount(); $('act').classList.add('show');
+}
+function bindRow(it){
+  const b=it.binding; if(!b||!b.tool)return '';
+  if(b.tool==='every output')return `<div class="bind">Scans <code>every output</code> of the agent</div>`;
+  const tools=b.tools&&b.tools.length>1?b.tools:[b.tool];
+  const live=GRAPHS[0]&&GRAPHS[0].sources.includes('observed');
+  const seen=b.observed?`<span class="n">· ${b.observed} calls seen on OpenBox</span>`:(live?`<span class="n" title="OpenBox has recorded other tool calls from this agent but never this one, so the rule is untested at runtime.">· never seen live</span>`:'');
+  return `<div class="bind">Binds to ${tools.map(t=>`<code>${t}</code>`).join(' ')}${b.arg?` on <code>${b.arg}</code>`:''}${b.after?` after ${b.after.map(t=>`<code>${t}</code>`).join(' ')}`:''}${seen}</div>`;
 }
 function toggle(el){el.classList.toggle('sel');el.querySelector('.cb').textContent=el.classList.contains('sel')?'✓':'';updateCount();}
 function updateCount(){const n=cards.filter(c=>c.classList.contains('sel')).length;$('count').textContent=`${n} selected`;$('sub').textContent=n?'Policies are created inactive, tested, then activated.':'Select the policies to apply';$('apply').disabled=!n;}

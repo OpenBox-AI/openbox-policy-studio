@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -27,7 +28,7 @@ from .extract import extractor_from_env
 from .graph import Services, build_graph, compile_nda
 from .jev import judge_from_env
 from .models import CompileReport
-from .openbox_api import RecordingBackend, apply_all, backend_from_env
+from .openbox_api import RecordingBackend, apply_all, backend_from_env, fetch_activity_events
 from .templates import describe
 
 app = FastAPI(title="NDA → OpenBox")
@@ -131,12 +132,79 @@ async def openbox_state(matter: str = "trial") -> JSONResponse:
     )
 
 
+def _event_source():
+    """Live activity events per agent, when an org key is configured."""
+
+    base = os.environ.get("OPENBOX_BACKEND_URL", "http://localhost:3000")
+    key = os.environ.get("OPENBOX_ORG_API_KEY", "").strip()
+    if not key:
+        return None
+
+    async def events(agent_id: str) -> list[dict[str, Any]]:
+        cached = _EVENTS.get(agent_id)
+        if cached and time.monotonic() - cached[0] < 120:
+            return cached[1]
+        rows = await fetch_activity_events(base, key, agent_id)
+        _EVENTS[agent_id] = (time.monotonic(), rows)
+        return rows
+
+    return events
+
+
+# Observed events per agent, kept two minutes: reading the log is paged ten
+# at a time, and the officer's page asks for the graph on load and on upload.
+_EVENTS: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+
+
+def _graph_json(bindings) -> list[dict[str, Any]]:
+    names = {a.id: a.name for a in bindings.all_agents}
+    out = []
+    for agent_id, graph in bindings.graphs.items():
+        body = graph.model_dump(mode="json")
+        body["name"] = names.get(agent_id, graph.name)
+        body["order"] = graph.ordered_nodes()
+        for tool in body["tools"]:
+            spec = graph.tool(tool["name"])
+            tool["document_arg"] = spec.document_arg if spec else None
+        out.append(body)
+    return out
+
+
 def _report_json(report: CompileReport, bindings) -> dict[str, Any]:
     body = report.model_dump(mode="json")
     body["coverage"] = report.coverage
+    body["graphs"] = _graph_json(bindings)
     for control, raw in zip(report.controls, body["controls"], strict=True):
         raw["description"] = describe(control, bindings)
     return body
+
+
+# One judge for the process, so tool roles are judged once rather than per upload.
+_JUDGE = None
+
+
+def _services(bindings) -> Services:
+    global _JUDGE
+    if _JUDGE is None:
+        _JUDGE = judge_from_env()
+    # Propose only: a recording backend means nothing is created yet.
+    return Services(
+        _JUDGE, extractor_from_env(), RecordingBackend(), bindings, events=_event_source()
+    )
+
+
+@app.get("/agent-graph")
+async def agent_graph(matter: str = "trial") -> JSONResponse:
+    """The matter's agents' graphs with live observations folded in and tool roles judged."""
+
+    bindings_path = BINDINGS_DIR / f"{matter}.yaml"
+    if not bindings_path.exists():
+        raise HTTPException(404, f"unknown matter {matter}")
+    bindings = load_bindings(bindings_path)
+    services = _services(bindings)
+    for agent_id, graph in list(bindings.graphs.items()):
+        bindings.graphs[agent_id] = await services.map_agent(graph)
+    return JSONResponse(_graph_json(bindings))
 
 
 @app.post("/propose")
@@ -149,8 +217,7 @@ async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONR
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as handle:
         handle.write(await nda.read())
         source = Path(handle.name)
-    # Propose only: a recording backend means nothing is created yet.
-    services = Services(judge_from_env(), extractor_from_env(), RecordingBackend(), bindings)
+    services = _services(bindings)
     try:
         # Propose is read-only, so the graph runs bare here. Governing the compiler
         # itself (the CLI path) re-instruments the process per handler, which does

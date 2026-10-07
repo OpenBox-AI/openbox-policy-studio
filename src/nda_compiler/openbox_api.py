@@ -170,6 +170,41 @@ class HttpBackend:
         return response
 
 
+async def fetch_activity_events(
+    base_url: str, api_key: str, agent_id: str, pages: int = 40
+) -> list[dict[str, Any]]:
+    """The agent's recent governance events, newest first (GET /agent/:id/logs).
+
+    The endpoint pages ten at a time whatever limit is asked for, and one run
+    of the agent is well over a hundred events (chain, llm and tool events
+    for every step), so enough pages are read to cover a few runs.
+    """
+
+    events: list[dict[str, Any]] = []
+    async with httpx.AsyncClient(
+        base_url=base_url.rstrip("/"), headers={"X-API-Key": api_key}, timeout=10
+    ) as client:
+        start = 0
+        for _ in range(pages):
+            try:
+                response = await client.get(
+                    f"/agent/{agent_id}/logs", params={"limit": 50, "start": start}
+                )
+            except httpx.HTTPError:
+                break
+            if response.status_code >= 300:
+                break
+            page = _unwrap(response.json())
+            rows = page.get("data", []) if isinstance(page, dict) else page
+            if not rows:
+                break
+            events.extend(rows)
+            start += len(rows)
+            if isinstance(page, dict) and start >= int(page.get("total", 0)):
+                break
+    return events
+
+
 def _unwrap(body: Any) -> Any:
     """The backend wraps every response as {status, data}."""
 
