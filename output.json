@@ -65,14 +65,14 @@
       "kind": "definition",
       "confidence": 1.0,
       "probabilities": {
+        "use_restriction": 0.0,
+        "marked_material": 0.0,
+        "personal_data": 0.0,
         "permitted_recipients": 0.0,
         "third_party_disclosure": 0.0,
-        "personal_data": 0.0,
-        "boilerplate": 0.0,
-        "not_enforceable": 0.0,
-        "marked_material": 0.0,
         "definition": 1.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.0,
+        "not_enforceable": 0.0
       }
     },
     {
@@ -80,14 +80,14 @@
       "kind": "permitted_recipients",
       "confidence": 1.0,
       "probabilities": {
-        "permitted_recipients": 1.0,
-        "boilerplate": 0.0,
-        "personal_data": 0.0,
-        "third_party_disclosure": 0.0,
-        "not_enforceable": 0.0,
+        "use_restriction": 0.0,
         "marked_material": 0.0,
+        "personal_data": 0.0,
+        "permitted_recipients": 1.0,
+        "third_party_disclosure": 0.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.0,
+        "not_enforceable": 0.0
       }
     },
     {
@@ -95,14 +95,14 @@
       "kind": "use_restriction",
       "confidence": 1.0,
       "probabilities": {
-        "permitted_recipients": 0.0,
-        "boilerplate": 0.0,
-        "personal_data": 0.0,
-        "third_party_disclosure": 0.0,
-        "not_enforceable": 0.0,
+        "use_restriction": 1.0,
         "marked_material": 0.0,
+        "personal_data": 0.0,
+        "permitted_recipients": 0.0,
+        "third_party_disclosure": 0.0,
         "definition": 0.0,
-        "use_restriction": 1.0
+        "boilerplate": 0.0,
+        "not_enforceable": 0.0
       }
     },
     {
@@ -110,14 +110,14 @@
       "kind": "third_party_disclosure",
       "confidence": 1.0,
       "probabilities": {
-        "permitted_recipients": 0.0,
-        "boilerplate": 0.0,
-        "personal_data": 0.0,
-        "third_party_disclosure": 1.0,
-        "not_enforceable": 0.0,
+        "use_restriction": 0.0,
         "marked_material": 0.0,
+        "personal_data": 0.0,
+        "permitted_recipients": 0.0,
+        "third_party_disclosure": 1.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.0,
+        "not_enforceable": 0.0
       }
     },
     {
@@ -125,14 +125,14 @@
       "kind": "personal_data",
       "confidence": 1.0,
       "probabilities": {
+        "use_restriction": 0.0,
+        "personal_data": 1.0,
+        "marked_material": 0.0,
         "permitted_recipients": 0.0,
         "third_party_disclosure": 0.0,
-        "personal_data": 1.0,
-        "boilerplate": 0.0,
-        "not_enforceable": 0.0,
-        "marked_material": 0.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.0,
+        "not_enforceable": 0.0
       }
     },
     {
@@ -140,14 +140,14 @@
       "kind": "boilerplate",
       "confidence": 1.0,
       "probabilities": {
-        "permitted_recipients": 0.0,
-        "boilerplate": 1.0,
+        "use_restriction": 0.0,
         "personal_data": 0.0,
-        "third_party_disclosure": 0.0,
-        "not_enforceable": 0.0,
         "marked_material": 0.0,
+        "permitted_recipients": 0.0,
+        "third_party_disclosure": 0.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 1.0,
+        "not_enforceable": 0.0
       }
     },
     {
@@ -155,14 +155,14 @@
       "kind": "not_enforceable",
       "confidence": 1.0,
       "probabilities": {
-        "permitted_recipients": 0.0,
-        "boilerplate": 0.0,
-        "personal_data": 0.0,
-        "third_party_disclosure": 0.0,
-        "not_enforceable": 1.0,
+        "use_restriction": 0.0,
         "marked_material": 0.0,
+        "personal_data": 0.0,
+        "permitted_recipients": 0.0,
+        "third_party_disclosure": 0.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.0,
+        "not_enforceable": 1.0
       }
     },
     {
@@ -170,14 +170,14 @@
       "kind": "not_enforceable",
       "confidence": 1.0,
       "probabilities": {
-        "permitted_recipients": 0.0,
-        "boilerplate": 0.0,
+        "use_restriction": 0.0,
         "personal_data": 0.0,
-        "third_party_disclosure": 0.0,
-        "not_enforceable": 1.0,
         "marked_material": 0.0,
+        "permitted_recipients": 0.0,
+        "third_party_disclosure": 0.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.0,
+        "not_enforceable": 1.0
       }
     },
     {
@@ -185,14 +185,14 @@
       "kind": "not_enforceable",
       "confidence": 0.99,
       "probabilities": {
-        "permitted_recipients": 0.0,
-        "boilerplate": 0.01,
-        "personal_data": 0.0,
-        "third_party_disclosure": 0.0,
-        "not_enforceable": 0.99,
+        "use_restriction": 0.0,
         "marked_material": 0.0,
+        "personal_data": 0.0,
+        "permitted_recipients": 0.0,
+        "third_party_disclosure": 0.0,
         "definition": 0.0,
-        "use_restriction": 0.0
+        "boilerplate": 0.01,
+        "not_enforceable": 0.99
       }
     }
   ],
@@ -200,18 +200,21 @@
     {
       "clause_id": "2",
       "kind": "permitted_recipients",
-      "bound_party": "Receiving Party",
+      "bound_party": "The Receiving Party",
       "action": "disclose",
       "subject": "Confidential Information",
       "permitted_recipients": [
-        "Representatives"
+        "its Representatives who have a need to know for the Purpose"
       ],
       "prohibited_recipients": [
-        "PepsiCo"
+        "any other person, including any competitor of the Disclosing Party such as PepsiCo"
       ],
       "exceptions": [],
-      "marked_terms": [],
-      "purpose": null,
+      "marked_terms": [
+        "\"Confidential\"",
+        "\"Project Fizz\""
+      ],
+      "purpose": "evaluating integration risk for the proposed transaction between the parties",
       "duration": null,
       "source_quote": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
       "ungrounded": []
@@ -219,14 +222,17 @@
     {
       "clause_id": "3",
       "kind": "use_restriction",
-      "bound_party": "Receiving Party",
+      "bound_party": "The Receiving Party",
       "action": "use",
       "subject": "Confidential Information",
       "permitted_recipients": [],
       "prohibited_recipients": [],
       "exceptions": [],
-      "marked_terms": [],
-      "purpose": "evaluating integration risk for the proposed transaction between the parties",
+      "marked_terms": [
+        "Confidential",
+        "Project Fizz"
+      ],
+      "purpose": "Purpose",
       "duration": null,
       "source_quote": "The Receiving Party shall use Confidential Information solely for the Purpose and for no other purpose, including benchmarking, marketing or any work for another client.",
       "ungrounded": []
@@ -234,14 +240,23 @@
     {
       "clause_id": "4",
       "kind": "third_party_disclosure",
-      "bound_party": "Receiving Party",
-      "action": "transmit",
+      "bound_party": "The Receiving Party",
+      "action": "shall not transmit, email or otherwise send",
       "subject": "Confidential Information",
       "permitted_recipients": [],
-      "prohibited_recipients": [],
-      "exceptions": [],
-      "marked_terms": [],
-      "purpose": null,
+      "prohibited_recipients": [
+        "any third party",
+        "outside the Receiving Party's systems"
+      ],
+      "exceptions": [
+        "the prior written consent of the Disclosing Party",
+        "subject to Section 6"
+      ],
+      "marked_terms": [
+        "Confidential",
+        "Project Fizz"
+      ],
+      "purpose": "evaluating integration risk for the proposed transaction between the parties",
       "duration": null,
       "source_quote": "The Receiving Party shall not transmit, email or otherwise send Confidential Information to any third party or outside the Receiving Party's systems without the prior written consent of the Disclosing Party, subject to Section 6.",
       "ungrounded": []
@@ -250,13 +265,15 @@
       "clause_id": "5",
       "kind": "personal_data",
       "bound_party": "Receiving Party",
-      "action": "reproduce",
-      "subject": "Confidential Information",
+      "action": "shall not reproduce",
+      "subject": "personal data of the Disclosing Party's employees or customers",
       "permitted_recipients": [],
       "prohibited_recipients": [],
       "exceptions": [],
-      "marked_terms": [],
-      "purpose": null,
+      "marked_terms": [
+        "Confidential Information"
+      ],
+      "purpose": "evaluating integration risk for the proposed transaction between the parties",
       "duration": null,
       "source_quote": "To the extent Confidential Information contains personal data of the Disclosing Party's employees or customers, the Receiving Party shall not reproduce such personal data in any report or communication.",
       "ungrounded": []
@@ -293,7 +310,7 @@
             "id": "folder",
             "left": {
               "kind": "field",
-              "field": "activity_input.document_id",
+              "field": "activity_input[0].document_id",
               "transform": "value",
               "valueType": "string"
             },
@@ -318,9 +335,16 @@
             "event_type": "ActivityStarted",
             "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
             "activity_type": "read_document",
-            "activity_input": {
-              "document_id": "0001/10001/deck.docx"
-            }
+            "activity_input": [
+              {
+                "document_id": "0001/10001/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
           },
           "expect": "BLOCK"
         },
@@ -330,16 +354,116 @@
             "event_type": "ActivityStarted",
             "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
             "activity_type": "read_document",
-            "activity_input": {
-              "document_id": "9999/99999/deck.docx"
-            }
+            "activity_input": [
+              {
+                "document_id": "9999/99999/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
           },
           "expect": "ALLOW"
         }
       ],
-      "verify_probability": 0.81,
+      "verify_probability": 0.8,
       "status": "active",
-      "remote_id": "a98e173f-2b0e-45e6-8b11-30739751c2ea",
+      "remote_id": "073e2f07-c229-452e-a75f-1eb69144c113",
+      "note": ""
+    },
+    {
+      "clause_id": "2",
+      "kind": "permitted_recipients",
+      "type": "policy_rule",
+      "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
+      "payload": {
+        "rule_name": "NDA coca-cola §2 upload_document 0001/10001/",
+        "description": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "priority": 90,
+        "match_mode": "all",
+        "conditions": [
+          {
+            "id": "tool",
+            "left": {
+              "kind": "field",
+              "field": "activity_type",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "equals",
+            "right": {
+              "kind": "literal",
+              "value": "upload_document",
+              "valueType": "string"
+            }
+          },
+          {
+            "id": "folder",
+            "left": {
+              "kind": "field",
+              "field": "activity_input[0].destination_document_id",
+              "transform": "value",
+              "valueType": "string"
+            },
+            "operator": "starts_with",
+            "right": {
+              "kind": "literal",
+              "value": "0001/10001/",
+              "valueType": "string"
+            }
+          }
+        ],
+        "decision": "BLOCK",
+        "reason": "NDA The Coca-Cola Company §2: The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
+        "constraints": [],
+        "trust_impact": "medium",
+        "is_active": false
+      },
+      "tests": [
+        {
+          "label": "BarryClientIntelligenceAgent upload_document covered folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
+            "activity_type": "upload_document",
+            "activity_input": [
+              {
+                "destination_document_id": "0001/10001/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
+          },
+          "expect": "BLOCK"
+        },
+        {
+          "label": "BarryClientIntelligenceAgent upload_document other folder",
+          "input": {
+            "event_type": "ActivityStarted",
+            "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
+            "activity_type": "upload_document",
+            "activity_input": [
+              {
+                "destination_document_id": "9999/99999/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
+          },
+          "expect": "ALLOW"
+        }
+      ],
+      "verify_probability": 0.8200000000000001,
+      "status": "active",
+      "remote_id": "bdc7b539-9d83-4ba9-93e6-2aed85e04a19",
       "note": ""
     },
     {
@@ -372,7 +496,7 @@
             "id": "folder",
             "left": {
               "kind": "field",
-              "field": "activity_input.document_id",
+              "field": "activity_input[0].document_id",
               "transform": "value",
               "valueType": "string"
             },
@@ -397,9 +521,16 @@
             "event_type": "ActivityStarted",
             "agent_id": "e65b05a8-f0ab-4f3c-9667-6087258a3589",
             "activity_type": "read_document",
-            "activity_input": {
-              "document_id": "0001/10001/deck.docx"
-            }
+            "activity_input": [
+              {
+                "document_id": "0001/10001/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
           },
           "expect": "BLOCK"
         },
@@ -409,16 +540,23 @@
             "event_type": "ActivityStarted",
             "agent_id": "e65b05a8-f0ab-4f3c-9667-6087258a3589",
             "activity_type": "read_document",
-            "activity_input": {
-              "document_id": "9999/99999/deck.docx"
-            }
+            "activity_input": [
+              {
+                "document_id": "9999/99999/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
           },
           "expect": "ALLOW"
         }
       ],
-      "verify_probability": 0.8,
+      "verify_probability": 0.81,
       "status": "active",
-      "remote_id": "e312b521-5b22-486f-a552-d2884876a2e6",
+      "remote_id": "95192634-b0d1-4aeb-bc7b-8fa1a857e304",
       "note": ""
     },
     {
@@ -451,7 +589,7 @@
             "id": "folder",
             "left": {
               "kind": "field",
-              "field": "activity_input.document_id",
+              "field": "activity_input[0].destination_document_id",
               "transform": "value",
               "valueType": "string"
             },
@@ -476,9 +614,16 @@
             "event_type": "ActivityStarted",
             "agent_id": "e65b05a8-f0ab-4f3c-9667-6087258a3589",
             "activity_type": "upload_document",
-            "activity_input": {
-              "document_id": "0001/10001/deck.docx"
-            }
+            "activity_input": [
+              {
+                "destination_document_id": "0001/10001/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
           },
           "expect": "BLOCK"
         },
@@ -488,95 +633,23 @@
             "event_type": "ActivityStarted",
             "agent_id": "e65b05a8-f0ab-4f3c-9667-6087258a3589",
             "activity_type": "upload_document",
-            "activity_input": {
-              "document_id": "9999/99999/deck.docx"
-            }
+            "activity_input": [
+              {
+                "destination_document_id": "9999/99999/deck.docx"
+              },
+              {
+                "__openbox": {
+                  "tool_type": "builtin"
+                }
+              }
+            ]
           },
           "expect": "ALLOW"
         }
       ],
-      "verify_probability": 0.81,
+      "verify_probability": 0.8200000000000001,
       "status": "active",
-      "remote_id": "6a2a095b-8d67-40ac-b36c-743b98922004",
-      "note": ""
-    },
-    {
-      "clause_id": "2",
-      "kind": "permitted_recipients",
-      "type": "policy_rule",
-      "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
-      "payload": {
-        "rule_name": "NDA coca-cola §2 upload_document 0001/10001/",
-        "description": "The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
-        "priority": 90,
-        "match_mode": "all",
-        "conditions": [
-          {
-            "id": "tool",
-            "left": {
-              "kind": "field",
-              "field": "activity_type",
-              "transform": "value",
-              "valueType": "string"
-            },
-            "operator": "equals",
-            "right": {
-              "kind": "literal",
-              "value": "upload_document",
-              "valueType": "string"
-            }
-          },
-          {
-            "id": "folder",
-            "left": {
-              "kind": "field",
-              "field": "activity_input.document_id",
-              "transform": "value",
-              "valueType": "string"
-            },
-            "operator": "starts_with",
-            "right": {
-              "kind": "literal",
-              "value": "0001/10001/",
-              "valueType": "string"
-            }
-          }
-        ],
-        "decision": "BLOCK",
-        "reason": "NDA The Coca-Cola Company §2: The Receiving Party shall disclose Confidential Information only to its Representatives who have a need to know for the Purpose, and shall not disclose Confidential Information to any other person, including any competitor of the Disclosing Party such as PepsiCo.",
-        "constraints": [],
-        "trust_impact": "medium",
-        "is_active": false
-      },
-      "tests": [
-        {
-          "label": "BarryClientIntelligenceAgent upload_document covered folder",
-          "input": {
-            "event_type": "ActivityStarted",
-            "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
-            "activity_type": "upload_document",
-            "activity_input": {
-              "document_id": "0001/10001/deck.docx"
-            }
-          },
-          "expect": "BLOCK"
-        },
-        {
-          "label": "BarryClientIntelligenceAgent upload_document other folder",
-          "input": {
-            "event_type": "ActivityStarted",
-            "agent_id": "73584fff-a6f4-41e4-a4b5-6e8df0a6a88f",
-            "activity_type": "upload_document",
-            "activity_input": {
-              "document_id": "9999/99999/deck.docx"
-            }
-          },
-          "expect": "ALLOW"
-        }
-      ],
-      "verify_probability": 0.79,
-      "status": "review",
-      "remote_id": null,
+      "remote_id": "afaa355c-6474-47f0-acb6-109ef06c2f5d",
       "note": ""
     },
     {
@@ -602,9 +675,9 @@
           "type": "noul",
           "instructions": {
             "what": "Is this use of the Disclosing Party's Confidential Information outside the Purpose defined in the NDA?",
-            "purpose": "evaluating integration risk for the proposed transaction between the parties",
+            "purpose": "Purpose",
             "true": "The task the agent is performing serves another client, benchmarking, marketing or any aim other than the Purpose.",
-            "false": "The task is a step in evaluating integration risk for the proposed transaction between the parties."
+            "false": "The task is a step in Purpose."
           }
         },
         "model": "jev-latest",
@@ -614,7 +687,7 @@
         "on_unavailable": "block"
       },
       "tests": [],
-      "verify_probability": 0.75,
+      "verify_probability": 0.71,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -642,9 +715,9 @@
           "type": "noul",
           "instructions": {
             "what": "Is this use of the Disclosing Party's Confidential Information outside the Purpose defined in the NDA?",
-            "purpose": "evaluating integration risk for the proposed transaction between the parties",
+            "purpose": "Purpose",
             "true": "The task the agent is performing serves another client, benchmarking, marketing or any aim other than the Purpose.",
-            "false": "The task is a step in evaluating integration risk for the proposed transaction between the parties."
+            "false": "The task is a step in Purpose."
           }
         },
         "model": "jev-latest",
@@ -654,7 +727,7 @@
         "on_unavailable": "block"
       },
       "tests": [],
-      "verify_probability": 0.75,
+      "verify_probability": 0.72,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -682,9 +755,9 @@
           "type": "noul",
           "instructions": {
             "what": "Is this use of the Disclosing Party's Confidential Information outside the Purpose defined in the NDA?",
-            "purpose": "evaluating integration risk for the proposed transaction between the parties",
+            "purpose": "Purpose",
             "true": "The task the agent is performing serves another client, benchmarking, marketing or any aim other than the Purpose.",
-            "false": "The task is a step in evaluating integration risk for the proposed transaction between the parties."
+            "false": "The task is a step in Purpose."
           }
         },
         "model": "jev-latest",
@@ -694,7 +767,7 @@
         "on_unavailable": "block"
       },
       "tests": [],
-      "verify_probability": 0.74,
+      "verify_probability": 0.71,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -741,7 +814,7 @@
         "trust_impact": "high"
       },
       "tests": [],
-      "verify_probability": 0.69,
+      "verify_probability": 0.7,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -835,7 +908,7 @@
         "trust_impact": "high"
       },
       "tests": [],
-      "verify_probability": 0.69,
+      "verify_probability": 0.6799999999999999,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -882,7 +955,7 @@
         "trust_impact": "high"
       },
       "tests": [],
-      "verify_probability": 0.71,
+      "verify_probability": 0.69,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -929,7 +1002,7 @@
         "trust_impact": "high"
       },
       "tests": [],
-      "verify_probability": 0.69,
+      "verify_probability": 0.6699999999999999,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -1028,7 +1101,7 @@
           "expect": "ALLOW"
         }
       ],
-      "verify_probability": 0.72,
+      "verify_probability": 0.74,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -1080,7 +1153,7 @@
           "expect": "ALLOW"
         }
       ],
-      "verify_probability": 0.72,
+      "verify_probability": 0.73,
       "status": "review",
       "remote_id": null,
       "note": ""
@@ -1132,55 +1205,54 @@
           "expect": "ALLOW"
         }
       ],
-      "verify_probability": 0.73,
+      "verify_probability": 0.72,
       "status": "review",
       "remote_id": null,
       "note": ""
     }
   ],
   "review": [
-    "§2: judge gave 0.79 for policy_rule on agent BarryClientIntelligenceAgent: NDA coca-cola §2 upload_document 0001/10001/",
-    "§3: judge gave 0.75 for judgement on agent AmyClientIntelligenceAgent: NDA coca-cola §3 use within Purpose",
-    "§3: judge gave 0.75 for judgement on agent BarryClientIntelligenceAgent: NDA coca-cola §3 use within Purpose",
-    "§3: judge gave 0.74 for judgement on agent ColinClientIntelligenceAgent: NDA coca-cola §3 use within Purpose",
-    "§4: judge gave 0.69 for behavior_rule on agent AmyClientIntelligenceAgent: NDA coca-cola §4 outbound after read via send_email",
+    "§3: judge gave 0.71 for judgement on agent AmyClientIntelligenceAgent: NDA coca-cola §3 use within Purpose",
+    "§3: judge gave 0.72 for judgement on agent BarryClientIntelligenceAgent: NDA coca-cola §3 use within Purpose",
+    "§3: judge gave 0.71 for judgement on agent ColinClientIntelligenceAgent: NDA coca-cola §3 use within Purpose",
+    "§4: judge gave 0.70 for behavior_rule on agent AmyClientIntelligenceAgent: NDA coca-cola §4 outbound after read via send_email",
     "§4: judge gave 0.68 for behavior_rule on agent AmyClientIntelligenceAgent: NDA coca-cola §4 outbound after read via http_post",
-    "§4: judge gave 0.69 for behavior_rule on agent BarryClientIntelligenceAgent: NDA coca-cola §4 outbound after read via send_email",
-    "§4: judge gave 0.71 for behavior_rule on agent BarryClientIntelligenceAgent: NDA coca-cola §4 outbound after read via http_post",
-    "§4: judge gave 0.69 for behavior_rule on agent ColinClientIntelligenceAgent: NDA coca-cola §4 outbound after read via send_email",
+    "§4: judge gave 0.68 for behavior_rule on agent BarryClientIntelligenceAgent: NDA coca-cola §4 outbound after read via send_email",
+    "§4: judge gave 0.69 for behavior_rule on agent BarryClientIntelligenceAgent: NDA coca-cola §4 outbound after read via http_post",
+    "§4: judge gave 0.67 for behavior_rule on agent ColinClientIntelligenceAgent: NDA coca-cola §4 outbound after read via send_email",
     "§4: judge gave 0.70 for behavior_rule on agent ColinClientIntelligenceAgent: NDA coca-cola §4 outbound after read via http_post",
-    "§5: judge gave 0.72 for guardrail on agent AmyClientIntelligenceAgent: NDA coca-cola §5 personal data",
-    "§5: judge gave 0.72 for guardrail on agent BarryClientIntelligenceAgent: NDA coca-cola §5 personal data",
-    "§5: judge gave 0.73 for guardrail on agent ColinClientIntelligenceAgent: NDA coca-cola §5 personal data"
+    "§5: judge gave 0.74 for guardrail on agent AmyClientIntelligenceAgent: NDA coca-cola §5 personal data",
+    "§5: judge gave 0.73 for guardrail on agent BarryClientIntelligenceAgent: NDA coca-cola §5 personal data",
+    "§5: judge gave 0.72 for guardrail on agent ColinClientIntelligenceAgent: NDA coca-cola §5 personal data"
   ],
   "timings": [
     {
       "stage": "parse",
-      "ms": 0.2497909590601921
+      "ms": 0.2809999277815223
     },
     {
       "stage": "classify",
-      "ms": 616.1835839739069
+      "ms": 1059.243040974252
     },
     {
       "stage": "extract",
-      "ms": 0.7772080134600401
+      "ms": 3314.413040992804
     },
     {
       "stage": "build",
-      "ms": 0.1545000122860074
+      "ms": 0.29645801987499
     },
     {
       "stage": "verify",
-      "ms": 585.7419579988346
+      "ms": 1096.8027079943568
     },
     {
       "stage": "apply",
-      "ms": 1242.275541066192
+      "ms": 1700.0548749929294
     }
   ],
   "models": {
     "judge": "jev-1.13.0",
-    "extractor": "fake-extractor"
+    "extractor": "gpt-5-mini"
   }
 }

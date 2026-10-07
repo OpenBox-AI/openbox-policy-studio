@@ -48,12 +48,20 @@ def _reason(obligation: Obligation, bindings: Bindings) -> str:
     return f"NDA {bindings.disclosing_party} §{obligation.clause_id}: {obligation.source_quote}"
 
 
-def _tool_event(agent_id: str, tool: str, document_id: str) -> dict[str, Any]:
+def _document_arg(tool: str, bindings: Bindings) -> str:
+    """Which tool argument carries the document path (confirmed against live events)."""
+
+    return "destination_document_id" if tool in bindings.file_tools else "document_id"
+
+
+def _tool_event(agent_id: str, tool: str, arg: str, document_id: str) -> dict[str, Any]:
+    # The LangGraph SDK sends tool arguments as a list: [args, {"__openbox": ...}].
+    # Rules therefore address activity_input[0]; the test input mirrors that shape.
     return {
         "event_type": "ActivityStarted",
         "agent_id": agent_id,
         "activity_type": tool,
-        "activity_input": {"document_id": document_id},
+        "activity_input": [{arg: document_id}, {"__openbox": {"tool_type": "builtin"}}],
     }
 
 
@@ -65,6 +73,7 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
     for agent in bindings.other_agents:
         for tool in tools:
             for folder in bindings.covered_folders:
+                arg = _document_arg(tool, bindings)
                 payload = {
                     "rule_name": _rule_name(f"{tool} {folder}", obligation, bindings),
                     "description": obligation.source_quote,
@@ -72,7 +81,7 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
                     "match_mode": "all",
                     "conditions": [
                         _condition("tool", "activity_type", "equals", tool),
-                        _condition("folder", "activity_input.document_id", "starts_with", folder),
+                        _condition("folder", f"activity_input[0].{arg}", "starts_with", folder),
                     ],
                     "decision": "BLOCK",
                     "reason": _reason(obligation, bindings),
@@ -91,12 +100,12 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
                         tests=[
                             TestCase(
                                 label=f"{agent.name} {tool} covered folder",
-                                input=_tool_event(agent.id, tool, f"{folder}deck.docx"),
+                                input=_tool_event(agent.id, tool, arg, f"{folder}deck.docx"),
                                 expect="BLOCK",
                             ),
                             TestCase(
                                 label=f"{agent.name} {tool} other folder",
-                                input=_tool_event(agent.id, tool, f"{other_folder}deck.docx"),
+                                input=_tool_event(agent.id, tool, arg, f"{other_folder}deck.docx"),
                                 expect="ALLOW",
                             ),
                         ],

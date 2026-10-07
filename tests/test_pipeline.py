@@ -44,6 +44,11 @@ async def test_compile_emits_grounded_controls(services):
     assert rule["decision"] == "BLOCK"
     assert rule["is_active"] is False
     assert rule["conditions"][1]["right"]["value"] == "0001/10001/"
+    fields = {c.payload["conditions"][1]["left"]["field"] for c in policy_rules}
+    assert fields == {
+        "activity_input[0].document_id",
+        "activity_input[0].destination_document_id",
+    }
     assert "§2" in rule["reason"]
     assert all(c.status == "active" for c in report.controls)
 

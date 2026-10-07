@@ -109,8 +109,11 @@ class OpenAIExtractor:
         self.model = model
 
     async def extract(self, clause: Clause, kind: ControlKind, definitions: str) -> Obligation:
+        # gpt-5 models reason by default; extraction is a copy task, so turn it off.
+        extra = {"reasoning_effort": "minimal"} if self.model.startswith("gpt-5") else {}
         response = await self._client.chat.completions.create(
             model=self.model,
+            **extra,
             messages=[
                 {"role": "system", "content": _SYSTEM},
                 {
