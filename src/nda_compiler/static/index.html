@@ -288,7 +288,6 @@ tr.held .cb{visibility:hidden}
           <thead><tr><th>Policy</th><th>Decision</th><th>Binds to</th><th>Confidence</th><th class="c">Apply</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
-        <div class="scope" id="scope"></div>
       </div>
       <div class="card-foot" id="act" hidden>
         <span class="n" id="count">0 selected</span><span class="sub" id="sub">Select the policies to apply</span>
@@ -415,11 +414,6 @@ function render(d){
       tr.addEventListener('click',()=>toggle(tr));tr.querySelector('.cb').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(tr);}});rows.push(tr);}
     tb.appendChild(tr); tb.appendChild(det);
   });
-  const scope=d.classifications.filter(c=>c.kind==='not_enforceable').map(c=>byId[c.clause_id]);
-  const sc=$('scope'); let html='';
-  if(scope.length)html+=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${esc(c.id)} ${esc(c.heading)}</span>`).join('');
-  (d.not_applicable||[]).forEach(n=>{const m=n.match(/^§([\d.]+)/);html+=`<span class="why"><span class="badge na">§${m?m[1]:''} no platform policy</span> ${esc(n.replace(/^§[\d.]+[^:]*:\s*/,''))}</span>`;});
-  sc.innerHTML=html;
   drop.hidden=true; $('tablewrap').hidden=false; $('act').hidden=false; $('reset').hidden=false; updateCount();
 }
 function select(tr,on){tr.classList.toggle('sel',on);const cb=tr.querySelector('.cb');cb.setAttribute('aria-checked',String(on));cb.innerHTML=on?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px;stroke-width:3"><path d="M20 6 9 17l-5-5"/></svg>':'';}
