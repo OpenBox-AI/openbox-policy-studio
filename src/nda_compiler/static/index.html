@@ -3,223 +3,304 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NDA Policies</title>
+<title>Policy Studio · OpenBox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=optional" rel="stylesheet">
 <style>
+/* Tokens mirror openbox-fe/src/globals.css (light theme). */
 :root{
-  --bg:#0F1420; --panel:#141A26; --panel-2:#1A2130; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
-  --text:#E6E9EF; --muted:#8B93A7; --faint:#5C657A;
-  --accent:#6366F1; --accent-2:#4F51D6; --ok:#2DD4A0; --warn:#E0A83A; --bad:#F0616D;
-  --side:380px; --bar:56px; --r:10px;
+  --background:#FCFCFD; --card:#FFFFFF; --foreground:#4B5563; --heading:#3F4A5C;
+  --muted:#F5F6F7; --muted-fg:#7B8291; --border:#E5E7EB; --secondary:#F5F6F7;
+  --primary:#3B9EFF; --primary-600:#1B7AF5; --primary-700:#1464E1; --primary-50:#EEF8FF; --primary-100:#D9EFFF;
+  --accent:#F0F6FD; --accent-fg:#1F6FD1; --ring:rgba(59,158,255,.3);
+  --ok:#32D583; --ok-bg:#D1FADF; --ok-fg:#027A48;
+  --info:#069FFF; --info-bg:#D6F5FF; --info-fg:#008CFF;
+  --warn:#F79009; --warn-bg:#FEF0C7; --warn-fg:#DC6803;
+  --err:#F04438; --err-bg:#FEE4E2; --err-fg:#D92D20;
+  --radius:12px; --radius-md:8px; --sidebar:256px;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05); --shadow-md:0 4px 8px -2px rgba(16,24,40,.1),0 2px 4px -2px rgba(16,24,40,.06);
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
-button{font:inherit;cursor:pointer;border:0;border-radius:8px}
-button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#scene{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;z-index:0;opacity:.9}
+html,body{margin:0;background:var(--background);color:var(--foreground);font:500 14px/1.5 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+button:focus-visible,[tabindex]:focus-visible,select:focus-visible,input:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring);border-color:var(--primary)}
+code{font:500 12px/1 "Geist Mono",ui-monospace,monospace}
+svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-/* top bar */
-#bar{position:fixed;top:0;left:0;right:0;height:var(--bar);z-index:3;display:flex;align-items:center;gap:20px;padding:0 20px;background:rgba(15,20,32,.75);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-#bar .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em}
-#bar .brand i{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#22D3EE);display:inline-block}
-#bar .sep{width:1px;height:20px;background:var(--line-2)}
-#bar .crumb{color:var(--muted)}
-#bar .crumb b{color:var(--text);font-weight:500}
-#bar .right{margin-left:auto;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;box-shadow:0 0 0 3px rgba(45,212,160,.15)}
-.dot.off{background:var(--bad);box-shadow:0 0 0 3px rgba(240,97,109,.15)}
-.chip{border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--text)}
-select.chip{background:var(--panel-2);font:inherit;font-size:12px;padding:3px 26px 3px 10px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px;background-repeat:no-repeat;cursor:pointer}
+/* ── sidebar (admin-sidebar.tsx) ── */
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--card);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;z-index:10}
+#sidebar .logo{display:flex;align-items:center;gap:12px;margin:0 8px 32px;color:var(--heading)}
+#sidebar .logo svg{height:36px;width:auto}
+#sidebar nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-md);color:var(--foreground);text-decoration:none;font-weight:500;transition:background .15s,color .15s}
+#sidebar nav a:hover{background:var(--muted);color:var(--heading)}
+#sidebar nav a.on{background:var(--accent);color:var(--accent-fg)}
+#sidebar nav a svg.i{width:18px;height:18px}
+#sidebar .foot{margin-top:auto;border-top:1px solid var(--border);padding-top:16px;display:flex;align-items:center;gap:12px}
+#sidebar .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(180deg,var(--primary),var(--primary-600));color:#fff;display:grid;place-items:center;font-weight:600}
+#sidebar .foot b{display:block;color:var(--heading);font-weight:600;font-size:13px}
+#sidebar .foot span{font-size:12px;color:var(--muted-fg)}
 
-/* layout */
-#main{position:fixed;top:var(--bar);left:0;right:var(--side);bottom:0;z-index:1;overflow:auto;padding:28px 32px 110px}
-#side{position:fixed;top:var(--bar);right:0;bottom:0;width:var(--side);z-index:2;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column}
+/* ── main (default-layout.tsx) ── */
+#main{margin-left:var(--sidebar);padding:24px;min-height:100vh}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:24px;min-height:64px}
+.page-head h1{font-size:24px;font-weight:700;color:var(--heading);margin:0 0 4px;letter-spacing:-.01em}
+.page-head p{margin:0;color:var(--muted-fg)}
+.page-head .right{display:flex;align-items:center;gap:12px;flex:none}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted-fg)}
+select.input{appearance:none;-webkit-appearance:none;height:40px;min-width:260px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237B8291' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding:0 40px 0 12px;font:inherit;color:var(--heading);box-shadow:var(--shadow-sm)}
+.live{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card);font-size:13px;color:var(--muted-fg);box-shadow:var(--shadow-sm)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.dot.off{background:var(--err)}.dot.wait{background:var(--warn)}
 
-/* page head */
-.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px}
-.head h1{font-size:20px;font-weight:600;letter-spacing:-.015em;margin:0 0 4px}
-.head p{margin:0;color:var(--muted);max-width:60ch}
-.stats{display:flex;gap:10px}
-.stats[hidden]{display:none}
-.stat{border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-width:116px;background:rgba(20,26,38,.6)}
-.stat b{display:block;font-size:18px;font-weight:600;letter-spacing:-.02em}
-.stat span{color:var(--muted);font-size:12px}
+/* ── cards & metrics (card.tsx, metric-card.tsx) ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.metric{padding:20px;display:flex;align-items:center;gap:12px;min-height:84px}
+.icon-box{width:40px;height:40px;border-radius:var(--radius-md);display:grid;place-items:center;background:var(--primary-50);color:var(--primary-600);flex:none}
+.icon-box.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.metric b{display:block;font-size:24px;font-weight:700;color:var(--heading);line-height:1.2;font-variant-numeric:tabular-nums}
+.metric span{color:var(--muted-fg)}
 
-/* dropzone */
-#drop{border:1px dashed var(--line-2);border-radius:14px;min-height:340px;display:grid;place-items:center;text-align:center;background:rgba(20,26,38,.45);transition:border-color .2s,background .2s;cursor:pointer}
-#drop.over{border-color:var(--accent);background:rgba(99,102,241,.08)}
-#drop[hidden]{display:none}
-#drop .in{max-width:380px}
-#drop .ico{width:44px;height:44px;border-radius:12px;margin:0 auto 14px;background:var(--panel-2);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--muted)}
-#drop h2{font-size:16px;font-weight:600;margin:0 0 6px}
-#drop p{margin:0 0 16px;color:var(--muted)}
-#drop button{background:var(--accent);color:#fff;padding:9px 14px;font-weight:500}
-#drop small{display:block;margin-top:10px;color:var(--faint);font-size:12px}
-#drop input{display:none}
+/* ── agent graph card ── */
+#graphcard{margin-bottom:24px;min-height:166px}
+#g-src{min-width:150px;justify-content:center}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.card-head h2{margin:0;font-size:15px;font-weight:600;color:var(--heading)}
+.card-head p{margin:2px 0 0;font-size:13px;color:var(--muted-fg)}
+.chain{display:flex;align-items:center;flex-wrap:wrap;gap:6px 0;padding:16px 20px;min-height:98px}
+.node{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted-fg);background:var(--muted);white-space:nowrap}
+.node.tool{color:var(--heading);background:var(--card);display:flex;align-items:center;gap:6px;font-weight:600}
+.node.tool .role{font-weight:500;color:var(--muted-fg)}
+.node.tool .n{font-weight:500;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+.node.bound{border-color:var(--primary);background:var(--primary-50);color:var(--primary-700)}
+.node.bound .role{color:var(--primary-600)}
+.arrow{width:14px;height:1px;background:var(--border);margin:0 3px;flex:none}
+.arrow.cond{background:repeating-linear-gradient(90deg,var(--border) 0 3px,transparent 3px 5px)}
+.skeleton{height:30px;border-radius:999px;background:var(--muted);animation:pulse 1.4s ease-in-out infinite;width:120px;margin-right:20px}
+@keyframes pulse{50%{opacity:.5}}
 
-/* stages */
-#stages{display:none;gap:8px;margin:0 0 20px}
-#stages.show{display:flex}
-.stage{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:rgba(20,26,38,.6);display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
-.stage i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line-2);display:inline-block;flex:none}
-.stage.on i{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
-.stage.done{color:var(--text)}.stage.done i{border-color:var(--ok);background:var(--ok)}
-.stage em{font-style:normal;color:var(--faint);font-variant-numeric:tabular-nums;margin-left:auto;margin-right:10px}
+/* ── two columns ── */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+@media (max-width:1180px){.cols{grid-template-columns:1fr}}
+
+/* ── proposals card ── */
+#proposals .card-head{min-height:66px}
+.progress{height:2px;background:var(--border);overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--primary-600));transition:width .4s ease}
+.stages{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted-fg);min-height:45px;align-items:center}
+.stage{display:flex;align-items:center;gap:6px}
+.stage i{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);display:inline-block;flex:none}
+.stage.on i{border-color:var(--primary);border-top-color:transparent;animation:spin .8s linear infinite}
+.stage.done{color:var(--heading)}.stage.done i{border-color:var(--ok);background:var(--ok)}
+.stage em{font-style:normal;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+.stage+.stage::before{content:"";width:16px;height:1px;background:var(--border);margin-right:2px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* policy grid */
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:border-color .15s,transform .15s,background .15s;opacity:0;transform:translateY(8px)}
-.card.in{opacity:1;transform:none;transition:opacity .35s ease,transform .35s ease,border-color .15s}
-.card:hover{border-color:var(--line-2)}
-.card.sel{border-color:var(--accent);background:rgba(99,102,241,.07)}
-.card.held{opacity:.75;cursor:default}
-.card .top{display:flex;align-items:center;gap:8px}
-.badge{font-size:11px;font-weight:500;letter-spacing:.01em;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap}
-.badge.access{color:#A5B4FC;border-color:rgba(165,180,252,.35)}.badge.sequence{color:#67E8F9;border-color:rgba(103,232,249,.35)}
-.badge.scan{color:#FDBA74;border-color:rgba(253,186,116,.35)}.badge.judge{color:#C4B5FD;border-color:rgba(196,181,253,.35)}.badge.held{color:var(--warn);border-color:rgba(224,168,58,.4)}
-.card .sec{color:var(--muted);font-size:12px;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card .rule{margin:0;font-size:14px;line-height:1.5}
-.card .quote{margin:0;color:var(--muted);font-size:13px;line-height:1.5;border-left:2px solid var(--line-2);padding-left:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.card.sel .quote,.card:hover .quote{-webkit-line-clamp:unset}
-.card .foot{display:flex;align-items:center;gap:10px;margin-top:auto;font-size:12px;color:var(--muted)}
-.meter{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
-.meter i{display:block;height:100%;background:var(--accent);width:var(--p)}
-.card.held .meter i{background:var(--warn)}
-.cb{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:12px;color:#fff;flex:none}
-.card.sel .cb{background:var(--accent);border-color:var(--accent)}
-.note{color:var(--warn);font-size:12px}
+/* dropzone (shown inside the proposals card until a file is read) */
+#drop{margin:20px;border:1px dashed var(--border);border-radius:var(--radius);min-height:320px;display:grid;place-items:center;text-align:center;position:relative;overflow:hidden;background:var(--muted);transition:border-color .15s,background .15s;cursor:pointer}
+#drop.over{border-color:var(--primary);background:var(--primary-50)}
+#drop[hidden]{display:none}
+#drop canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.9}
+#drop .in{position:relative;max-width:380px;padding:24px}
+#drop .ico{width:48px;height:48px;border-radius:var(--radius-md);margin:0 auto 16px;background:var(--card);border:1px solid var(--border);display:grid;place-items:center;color:var(--primary-600);box-shadow:var(--shadow-sm)}
+#drop h3{font-size:16px;font-weight:600;color:var(--heading);margin:0 0 6px}
+#drop p{margin:0 0 16px;color:var(--muted-fg)}
+#drop small{display:block;margin-top:12px;color:var(--muted-fg);font-size:12px}
+#drop input{display:none}
 
-/* agent graph */
-#graph{border:1px solid var(--line);border-radius:var(--r);background:rgba(20,26,38,.6);padding:12px 14px;margin:0 0 20px;display:none}
-#graph.show{display:block}
-#graph .gh{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:10px}
-#graph .gh b{color:var(--text);font-weight:500}
-#graph .gh .src{margin-left:auto}
-.chain{display:flex;align-items:center;flex-wrap:wrap;gap:4px 0}
-.node{font-size:12px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);color:var(--faint);white-space:nowrap}
-.node.tool{color:var(--text);border-color:var(--line-2);background:var(--panel-2);display:flex;align-items:center;gap:6px}
-.node.tool .role{font-size:11px;color:var(--muted)}
-.node.tool .n{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
-.node.bound{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
-.node.bound .role{color:#A5B4FC}
-.arrow{width:16px;height:1px;background:var(--line-2);margin:0 2px;position:relative;flex:none}
-.arrow.cond{background:repeating-linear-gradient(90deg,var(--line-2) 0 3px,transparent 3px 6px)}
-.card .bind{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--muted)}
-.card .bind code{font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#A5B4FC;background:rgba(99,102,241,.1);border-radius:4px;padding:2px 6px}
-.card .bind .n{color:var(--faint)}
+/* buttons (button.tsx) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 20px;border-radius:var(--radius-md);font-weight:500;font-size:14px;transition:all .15s;white-space:nowrap}
+.btn.primary{background:linear-gradient(180deg,var(--primary),var(--primary-600));color:#fff;box-shadow:var(--shadow-sm)}
+.btn.primary:hover{background:linear-gradient(180deg,var(--primary-600),var(--primary-700));box-shadow:var(--shadow-md)}
+.btn.primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn.outline{border:1px solid var(--border);background:var(--card);color:var(--heading);box-shadow:var(--shadow-sm)}
+.btn.outline:hover{background:var(--muted)}
+.btn.ghost{color:var(--muted-fg);border-radius:999px;padding:0 12px}
+.btn.ghost:hover{background:var(--accent);color:var(--accent-fg)}
+.btn.sm{height:32px;padding:0 14px;font-size:13px}
 
-/* out of scope */
-#scope{margin-top:22px;color:var(--muted);font-size:13px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
-#scope.show{display:flex}
-#scope .chip{color:var(--muted)}
+/* table (policy-rules-table.tsx) */
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+col.c-policy{width:34%}col.c-type{width:13%}col.c-bind{width:29%}col.c-conf{width:16%}col.c-apply{width:8%}
+thead tr{background:var(--secondary);border-bottom:1px solid var(--border)}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--muted-fg);padding:10px 16px;white-space:nowrap}
+th.c,td.c{text-align:center}
+tbody tr{border-bottom:1px solid rgba(229,231,235,.6);transition:background .15s}
+tbody tr.main:hover{background:rgba(245,246,247,.6)}
+tbody tr.main.sel{background:var(--primary-50)}
+td{padding:14px 16px;vertical-align:top;font-size:14px}
+td .name{color:var(--heading);font-weight:500;display:block}
+td .desc{color:var(--muted-fg);font-size:12px;display:block;margin-top:2px}
+td{overflow-wrap:anywhere}
+.exp{display:flex;align-items:flex-start;gap:12px;text-align:left;min-width:0}
+.exp .chev{width:24px;height:24px;border-radius:50%;background:var(--muted);border:1px solid var(--border);display:grid;place-items:center;color:var(--muted-fg);flex:none;margin-top:1px;transition:transform .15s}
+tr.open .exp .chev{transform:rotate(90deg)}
+tr.detail td{background:var(--muted);padding:16px 20px 16px 68px;color:var(--foreground);font-size:13px}
+tr.detail[hidden]{display:none}
+tr.detail blockquote{margin:8px 0 0;padding:8px 12px;border-left:2px solid var(--primary);background:var(--card);border-radius:0 var(--radius-md) var(--radius-md) 0;color:var(--heading)}
+tr.detail .k{color:var(--muted-fg);font-size:12px;margin-top:10px}
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent}
+.badge.access{background:var(--info-bg);color:var(--info-fg)}
+.badge.sequence{background:#EDE9FE;color:#6D28D9}
+.badge.scan{background:var(--warn-bg);color:var(--warn-fg)}
+.badge.judge{background:#F3E8FF;color:#7E22CE}
+.badge.held{background:var(--warn-bg);color:var(--warn-fg)}
+.badge.active{background:var(--ok-bg);color:var(--ok-fg)}
+.badge.failed{background:var(--err-bg);color:var(--err-fg)}
+.badge.applying{background:var(--info-bg);color:var(--info-fg)}
+.badge.na{background:var(--muted);color:var(--muted-fg);border-color:var(--border)}
+.bind{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;color:var(--muted-fg);font-size:12px}
+.bind code{color:var(--primary-700);background:var(--primary-50);border-radius:4px;padding:3px 6px}
+.bind .seen{color:var(--ok-fg)}.bind .never{color:var(--warn-fg)}
+.conf{display:flex;align-items:center;gap:10px}
+.meter{flex:1;height:6px;background:var(--muted);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--primary);width:var(--p);border-radius:3px}
+tr.held .meter i{background:var(--warn)}
+.conf span{font-variant-numeric:tabular-nums;color:var(--heading);font-size:13px;min-width:34px;text-align:right}
+.cb{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);background:var(--card);display:inline-grid;place-items:center;color:#fff;cursor:pointer}
+tr.sel .cb{background:var(--primary);border-color:var(--primary)}
+tr.held .cb{visibility:hidden}
+.empty-row td{padding:48px 16px;text-align:center;color:var(--muted-fg)}
+.scope{padding:14px 20px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted-fg);min-height:50px}
+.scope .chip{border:1px solid var(--border);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--foreground);background:var(--card)}
+.scope .why{flex-basis:100%;font-size:12px;color:var(--muted-fg)}
+.card-foot{display:flex;align-items:center;gap:12px;padding:14px 20px;border-top:1px solid var(--border);min-height:65px}
+.card-foot .n{color:var(--heading);font-weight:600}
+.card-foot .sub{color:var(--muted-fg);font-size:13px}
+.card-foot .sp{flex:1}
 
-/* action bar */
-#act{position:fixed;left:32px;right:calc(var(--side) + 32px);bottom:24px;z-index:3;display:none;align-items:center;gap:14px;background:rgba(26,33,48,.9);backdrop-filter:blur(12px);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px 12px 18px}
-#act.show{display:flex}
-#act .n{font-weight:500}
-#act .sub{color:var(--muted);font-size:13px}
-#act .spacer{flex:1}
-#act .ghost{background:transparent;color:var(--muted);padding:9px 12px}
-#act .ghost:hover{color:var(--text)}
-#apply{background:var(--accent);color:#fff;padding:10px 16px;font-weight:500}
-#apply:hover{background:var(--accent-2)}
-#apply[disabled]{opacity:.45;cursor:default}
-
-/* side panel */
-#side header{padding:20px 20px 12px;border-bottom:1px solid var(--line)}
-#side h2{font-size:14px;font-weight:600;margin:0 0 2px}
-#side header p{margin:0;color:var(--muted);font-size:12px}
-#side .sync{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--muted)}
-#side .sync button{margin-left:auto;background:transparent;color:var(--muted);padding:4px 8px;font-size:12px;border:1px solid var(--line)}
-#ledger{flex:1;overflow:auto;padding:12px 12px 20px;display:flex;flex-direction:column;gap:8px}
-.empty{color:var(--muted);font-size:13px;padding:24px 12px;text-align:center;border:1px dashed var(--line);border-radius:var(--r)}
-.row{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:rgba(255,255,255,.02)}
+/* ── enforced card ── */
+#enforced{position:sticky;top:24px}
+#ledger{padding:12px;display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:calc(100vh - 220px);overflow:auto}
+.row{border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;background:var(--card);box-shadow:var(--shadow-sm)}
 .row .t{display:flex;gap:8px;align-items:center}
-.row .name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row .st{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:var(--muted)}
-.row .st .dot{box-shadow:none}
-.row.applying .dot{background:var(--warn);animation:pulse 1s infinite}
-.row.active .dot{background:var(--ok)}.row.failed .dot{background:var(--bad)}
-.row .opa{margin-left:auto;font-size:11px;color:var(--faint)}
-.row.opa .opa{color:var(--ok)}
-.row .why{font-size:12px;color:var(--muted);margin-top:4px}
-@keyframes pulse{50%{opacity:.35}}
+.row .nm{font-size:13px;font-weight:500;color:var(--heading);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .st{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted-fg)}
+.row .opa{margin-left:auto;display:inline-flex;align-items:center;gap:4px;color:var(--muted-fg)}
+.row.opa .opa{color:var(--ok-fg)}
+.row .why{font-size:12px;color:var(--err-fg);margin-top:6px}
+.row.applying .dot{background:var(--info);animation:pulse 1s infinite}
+.empty{color:var(--muted-fg);font-size:13px;padding:32px 16px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-md)}
 
-/* flying ghost */
-.fly{position:fixed;z-index:6;pointer-events:none;border-radius:10px;background:rgba(99,102,241,.25);border:1px solid var(--accent);transition:all .6s cubic-bezier(.2,.8,.2,1)}
+.fly{position:fixed;z-index:50;pointer-events:none;border-radius:var(--radius-md);background:var(--primary-100);border:1px solid var(--primary);transition:all .55s cubic-bezier(.2,.8,.2,1)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation:none!important}}
-@media (max-width:980px){:root{--side:0px}#side{display:none}}
+@media (max-width:1023px){#sidebar{display:none}#main{margin-left:0}}
 </style>
 </head>
 <body>
-<canvas id="scene"></canvas>
 
-<div id="bar">
-  <div class="brand"><i></i>OpenBox Policy Studio</div>
-  <span class="sep"></span>
-  <span class="crumb">Matter</span><select id="matter" class="chip" aria-label="Matter"></select>
-  <span class="chip" id="agentname">compliance agent</span>
-  <div class="right"><span class="dot" id="livedot"></span><span id="livetxt">connecting…</span></div>
-</div>
+<aside id="sidebar">
+  <div class="logo"><svg viewBox="0 0 161 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img"><title>OpenBox</title><path
+        d="M30.7984 40.8V16.3196H35.1661V19.525C36.6102 17.0946 39.3929 15.7913 42.5982 15.7913C47.917 15.7913 51.4394 19.525 51.4394 25.1255C51.4394 30.7261 47.7057 34.4598 42.3869 34.4598C39.2168 34.4598 36.6102 33.1213 35.307 31.184V40.8H30.7984ZM40.978 31.1135C44.606 31.1135 46.8251 28.824 46.8251 25.0903C46.8251 21.3566 44.6412 19.1375 41.1541 19.1375C37.5965 19.1375 35.2013 21.2862 35.2013 24.6676V25.5834C35.2013 28.9297 37.4908 31.1135 40.978 31.1135Z"
+        fill="currentColor"
+      /><path
+        d="M62.9233 34.4598C56.4422 34.4598 52.4619 31.0783 52.4619 25.3016C52.4619 19.3136 56.5126 15.7913 62.712 15.7913C69.017 15.7913 72.7155 19.0318 72.7155 24.6324V26.2527H56.8649C57.041 29.2819 59.3657 31.1135 63.0642 31.1135C65.7764 31.1135 67.8194 30.0216 68.9113 28.0491L72.4337 29.6694C70.6725 32.769 67.3967 34.4598 62.9233 34.4598ZM56.8649 23.3996H68.2069V23.2234C68.2069 20.3351 65.9173 18.6796 62.6415 18.6796C59.1896 18.6796 57.041 20.476 56.8649 23.3996Z"
+        fill="currentColor"
+      /><path
+        d="M74.0586 33.9314V16.3196H78.4264V20.0886C79.8353 17.2707 82.4066 15.7913 85.929 15.7913C90.8955 15.7913 93.5373 18.6444 93.5373 23.9984V33.9314H89.0639V24.6676C89.0639 21.0748 87.4436 19.3136 84.203 19.3136C80.7159 19.3136 78.5673 21.5679 78.5673 25.3016V33.9314H74.0586Z"
+        fill="currentColor"
+      /><path
+        d="M96.0819 33.9314V8.92269H109.432C115.596 8.92269 117.85 12.128 117.85 15.4038C117.85 17.9399 116.406 20.1942 113.377 20.9339C116.793 21.4975 118.554 23.7166 118.554 26.9571C118.554 30.6556 116.089 33.9314 109.819 33.9314H96.0819ZM108.903 30.3738C112.285 30.3738 113.588 28.6831 113.588 26.5697C113.588 24.421 112.214 22.9064 109.079 22.9064H100.908V30.3738H108.903ZM112.919 15.9322C112.919 14.2062 111.932 12.4803 108.516 12.4803H100.908V19.4545H108.516C112.144 19.4545 112.919 17.5877 112.919 15.9322Z"
+        fill="currentColor"
+      /><path
+        d="M129.975 34.4598C123.74 34.4598 119.443 30.9022 119.443 25.1255C119.443 19.3136 123.776 15.7913 129.975 15.7913C136.174 15.7913 140.472 19.3136 140.472 25.1255C140.472 30.9374 136.174 34.4598 129.975 34.4598ZM129.975 31.1487C133.568 31.1487 135.822 28.9649 135.822 25.1255C135.822 21.2509 133.532 19.1023 129.975 19.1023C126.347 19.1023 124.093 21.2509 124.093 25.1255C124.093 29.0001 126.347 31.1487 129.975 31.1487Z"
+        fill="currentColor"
+      /><path
+        d="M139.315 33.9314L147.1 24.879L139.738 16.3196H145.127L148.896 20.8635C149.425 21.5679 149.777 22.1315 149.953 22.5542H149.988C150.2 22.0963 150.587 21.5327 151.045 20.8987L154.779 16.3196H160.027L152.736 24.879L160.59 33.9314H155.131L150.939 29.0353C150.376 28.3661 150.023 27.8025 149.812 27.3446H149.777C149.601 27.7321 149.178 28.3309 148.579 29.0706L144.423 33.9314H139.315Z"
+        fill="currentColor"
+      /><path
+        d="M26.7057 28.5606C24.6433 32.1348 21.7502 34.389 18.0274 35.3224C14.4158 36.1799 10.9011 35.6217 7.48429 33.6494C4.47801 31.9132 2.36479 29.5199 1.14463 26.4676C-0.424699 22.479 -0.0189348 18.4214 2.36096 14.2947C4.43868 10.6947 7.35671 8.45579 11.117 7.57808C12.2633 7.31333 13.4 7.18671 14.5242 7.2011L8.62292 17.4305C8.52316 17.6003 8.42243 17.772 8.32171 17.9466C6.50202 21.1006 5.41328 23.7299 5.05548 25.8354C4.57106 28.8129 5.6387 31.0585 8.25936 32.5722C9.44115 33.2552 10.5827 33.5631 11.681 33.4979C14.5108 33.3434 17.5391 30.4686 20.7689 24.8704C22.1329 22.504 23.0855 20.409 23.6246 18.5835C24.7277 14.7715 23.827 12.0261 20.9243 10.3493C20.0514 9.84478 19.1756 9.55029 18.3008 9.46492C17.2513 9.34501 16.1866 9.5714 15.1065 10.146H15.1084L14.4436 9.76325C14.4436 9.76325 17.1266 6.63227 21.7003 9.27307C24.604 10.9498 26.6721 13.2127 27.9057 16.0626C29.6084 20.0588 29.2093 24.2239 26.7076 28.5606H26.7057Z"
+        fill="currentColor"
+      /></svg></div>
+  <nav>
+    <a href="http://localhost:3233/"><svg class="i" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>Dashboard</a>
+    <a href="http://localhost:3233/agents"><svg class="i" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>Agents</a>
+    <a href="#" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Policy Studio</a>
+    <a href="http://localhost:3233/approvals"><svg class="i" viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Approvals</a>
+    <a href="http://localhost:3233/compliance"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>Compliance</a>
+    <a href="http://localhost:3233/organization"><svg class="i" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>Organization</a>
+  </nav>
+  <div class="foot"><div class="avatar">A</div><div><b>Aswin</b><span>Compliance · Sellist</span></div></div>
+</aside>
 
 <main id="main">
-  <div class="head">
+  <div class="page-head">
     <div>
-      <h1>Policies from the NDA</h1>
-      <p>Upload the agreement. Each clause an agent can be held to becomes a policy you can review and apply.</p>
+      <h1>Policy Studio</h1>
+      <p>Upload a non-disclosure agreement. Each clause the agent can be held to becomes a policy you review and apply.</p>
     </div>
-    <div class="stats" id="stats" hidden>
-      <div class="stat"><b id="s-clauses">–</b><span>clauses read</span></div>
-      <div class="stat"><b id="s-policies">–</b><span>policies available</span></div>
-      <div class="stat"><b id="s-time">–</b><span>end to end</span></div>
+    <div class="right">
+      <label class="field">Matter<select id="matter" class="input" aria-label="Matter"><option>loading…</option></select></label>
+      <label class="field">OpenBox<span class="live"><span class="dot wait" id="livedot"></span><span id="livetxt">connecting…</span></span></label>
     </div>
   </div>
 
-  <div id="graph">
-    <div class="gh"><b id="g-name">Agent graph</b><span id="g-sum">reading…</span><span class="src" id="g-src"></span></div>
-    <div class="chain" id="chain"></div>
+  <div class="metrics">
+    <div class="card metric"><div class="icon-box"><svg class="i" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg></div><div><b id="s-clauses">–</b><span>Clauses read</span></div></div>
+    <div class="card metric"><div class="icon-box"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div><div><b id="s-policies">–</b><span>Policies proposed</span></div></div>
+    <div class="card metric"><div class="icon-box ok"><svg class="i" viewBox="0 0 24 24"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg></div><div><b id="s-active">–</b><span>Enforced on the agent</span></div></div>
   </div>
 
-  <div id="stages">
-    <div class="stage" data-s="map"><span>Map tools</span><em></em><i></i></div>
-    <div class="stage" data-s="parse"><span>Parse</span><em></em><i></i></div>
-    <div class="stage" data-s="classify"><span>Classify</span><em></em><i></i></div>
-    <div class="stage" data-s="extract"><span>Extract</span><em></em><i></i></div>
-    <div class="stage" data-s="verify"><span>Verify</span><em></em><i></i></div>
-  </div>
-
-  <label id="drop" tabindex="0">
-    <div class="in">
-      <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></div>
-      <h2>Upload an NDA</h2>
-      <p>PDF, Word or Markdown. Nothing is applied until you choose to.</p>
-      <button type="button" id="pick">Choose file</button>
-      <small>or drag it here</small>
+  <section class="card" id="graphcard">
+    <div class="card-head">
+      <div><h2 id="g-name">Agent graph</h2><p id="g-sum">Reading the agent's compiled graph…</p></div>
+      <span class="badge na" id="g-src">…</span>
     </div>
-    <input type="file" id="file" accept=".pdf,.docx,.md,.txt">
-  </label>
+    <div class="chain" id="chain"><span class="skeleton"></span><span class="skeleton" style="width:90px"></span><span class="skeleton" style="width:140px"></span><span class="skeleton" style="width:110px"></span><span class="skeleton" style="width:100px"></span><span class="skeleton" style="width:130px"></span><span class="skeleton" style="width:120px"></span><span class="skeleton" style="width:100px;margin-top:6px"></span><span class="skeleton" style="width:140px;margin-top:6px"></span></div>
+  </section>
 
-  <div id="grid"></div>
-  <div id="scope"></div>
+  <div class="cols">
+    <section class="card" id="proposals">
+      <div class="card-head">
+        <div><h2>Proposed policies</h2><p id="p-sub">Nothing is created on OpenBox until you apply.</p></div>
+        <button class="btn outline sm" id="reset" hidden>Start over</button>
+      </div>
+      <div class="progress"><i id="bar"></i></div>
+      <div class="stages" id="stages">
+        <span class="stage" data-s="map"><i></i>Map tools<em></em></span>
+        <span class="stage" data-s="parse"><i></i>Parse<em></em></span>
+        <span class="stage" data-s="classify"><i></i>Classify<em></em></span>
+        <span class="stage" data-s="extract"><i></i>Extract<em></em></span>
+        <span class="stage" data-s="verify"><i></i>Verify<em></em></span>
+      </div>
+
+      <label id="drop" tabindex="0">
+        <canvas id="scene"></canvas>
+        <div class="in">
+          <div class="ico"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg></div>
+          <h3>Upload an NDA</h3>
+          <p>PDF, Word or Markdown. The compiler reads every clause and proposes the policies the agent's tools can enforce.</p>
+          <button type="button" class="btn primary" id="pick">Choose file</button>
+          <small>or drop it here</small>
+        </div>
+        <input type="file" id="file" accept=".pdf,.docx,.md,.txt">
+      </label>
+
+      <div id="tablewrap" hidden>
+        <table>
+          <colgroup><col class="c-policy"><col class="c-type"><col class="c-bind"><col class="c-conf"><col class="c-apply"></colgroup>
+          <thead><tr><th>Policy</th><th>Type</th><th>Binds to</th><th>Confidence</th><th class="c">Apply</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="scope" id="scope"></div>
+      </div>
+      <div class="card-foot" id="act" hidden>
+        <span class="n" id="count">0 selected</span><span class="sub" id="sub">Select the policies to apply</span>
+        <span class="sp"></span>
+        <button class="btn primary" id="apply" disabled>Apply to OpenBox</button>
+      </div>
+    </section>
+
+    <aside class="card" id="enforced">
+      <div class="card-head">
+        <div><h2>Enforced on OpenBox</h2><p id="sidesub">Live from the policy service.</p></div>
+        <button class="btn ghost sm" id="refresh" title="Refresh"><svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+      </div>
+      <div id="ledger"><div class="empty">No policies enforced on this agent yet.</div></div>
+    </aside>
+  </div>
 </main>
-
-<div id="act">
-  <span class="n" id="count">0 selected</span><span class="sub" id="sub">Select the policies to apply</span>
-  <span class="spacer"></span>
-  <button class="ghost" id="reset">Start over</button>
-  <button id="apply" disabled>Apply to OpenBox</button>
-</div>
-
-<aside id="side">
-  <header>
-    <h2>Enforced on OpenBox</h2>
-    <p id="sidesub">Live from the policy service.</p>
-    <div class="sync"><span class="dot" id="syncdot"></span><span id="synctxt">reading…</span><button id="refresh">Refresh</button></div>
-  </header>
-  <div id="ledger"><div class="empty">No policies enforced on this agent yet.</div></div>
-</aside>
 
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"}}</script>
 <script type="module">
@@ -232,26 +313,44 @@ let MATTER = new URLSearchParams(location.search).get('matter') || 'trial';
   } catch { $('matter').innerHTML = `<option>${MATTER}</option>`; } })();
 $('matter').addEventListener('change', e => { const u = new URL(location); u.searchParams.set('matter', e.target.value); location.href = u; });
 
-/* ── ambient scene: slow gradient field + sparse particles ── */
+/* ── dropzone backdrop: the OpenBox auth-panel gradient, slowly moving ── */
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-const scene = new THREE.Scene();
-const cam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
 const uniforms = {t:{value:0}, res:{value:new THREE.Vector2(1,1)}};
-const field = new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.ShaderMaterial({uniforms, transparent:true,
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.ShaderMaterial({uniforms, transparent:true,
   vertexShader:`void main(){gl_Position=vec4(position,1.);}`,
   fragmentShader:`precision highp float;uniform float t;uniform vec2 res;
-  float n(vec2 p){return sin(p.x)*sin(p.y);}
-  void main(){vec2 uv=gl_FragCoord.xy/res; vec2 p=uv*3.0; float a=n(p+vec2(t*.05,t*.03))*.5+.5; float b=n(p*1.7+vec2(-t*.04,t*.06))*.5+.5;
-  vec3 c1=vec3(.39,.40,.95), c2=vec3(.13,.83,.93); vec3 col=mix(c1,c2,b)*a; float v=smoothstep(1.2,.2,distance(uv,vec2(.35,.6)));
-  gl_FragColor=vec4(col, .10*v);}`}));
-scene.add(field);
-const N=260, pos=new Float32Array(N*3); for(let i=0;i<N;i++){pos[i*3]=(Math.random()*2-1);pos[i*3+1]=(Math.random()*2-1);pos[i*3+2]=0;}
-const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
-scene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0x8b93a7,size:1.6,sizeAttenuation:false,transparent:true,opacity:.35})));
-function resize(){const w=canvas.clientWidth||1,h=canvas.clientHeight||1;const pr=renderer.getPixelRatio();if(canvas.width!==Math.floor(w*pr)||canvas.height!==Math.floor(h*pr)){renderer.setSize(w,h,false);uniforms.res.value.set(w*pr,h*pr);}}
-(function frame(){resize();if(!reduce){uniforms.t.value+=.016;const p=pg.attributes.position.array;for(let i=0;i<N;i++){p[i*3+1]+=.00035;if(p[i*3+1]>1)p[i*3+1]=-1;}pg.attributes.position.needsUpdate=true;}renderer.render(scene,cam);requestAnimationFrame(frame);})();
+  void main(){vec2 uv=gl_FragCoord.xy/res; float a=sin(uv.x*3.0+t*.15)*.5+.5; float b=cos(uv.y*2.5-t*.1+uv.x)*.5+.5;
+  vec3 deep=vec3(.09,.25,.52), mid=vec3(.11,.48,.88), light=vec3(.35,.72,1.0);
+  vec3 col=mix(mix(deep,mid,a),light,b*.35); float v=smoothstep(0.0,1.0,uv.y*.6+uv.x*.4);
+  gl_FragColor=vec4(col, .10+.06*v);}`})));
+function resize(){const w=canvas.clientWidth||1,h=canvas.clientHeight||1,pr=renderer.getPixelRatio();if(canvas.width!==Math.floor(w*pr)||canvas.height!==Math.floor(h*pr)){renderer.setSize(w,h,false);uniforms.res.value.set(w*pr,h*pr);}}
+(function frame(){if(!$('drop').hidden){resize();if(!reduce)uniforms.t.value+=.016;renderer.render(scene,cam);}requestAnimationFrame(frame);})();
+
+/* ── agent graph: what the SDK governs, from the compiled LangGraph ── */
+const ROLE={reads_material:'reads',searches_index:'searches',writes_internal:'drafts',files_to_store:'files',sends_outbound:'sends out',other:''};
+let GRAPHS=[];
+function renderGraph(gs){
+  GRAPHS=gs; const g=gs[0]; const chain=$('chain'); chain.innerHTML='';
+  if(!g){$('g-name').textContent='Agent graph';$('g-sum').textContent='No graph exported for this matter\'s agent. Policies fall back to the names in the bindings file.';$('g-src').textContent='not exported';return;}
+  const byNode={}; g.tools.forEach(t=>{if(t.node)byNode[t.node]=t;});
+  const edges=new Map(g.edges.map(e=>[e.source+'>'+e.target,e.conditional]));
+  g.order.forEach((n,i)=>{
+    if(i){const a=document.createElement('span');a.className='arrow'+(edges.get(g.order[i-1]+'>'+n)===true?' cond':'');chain.appendChild(a);}
+    const t=byNode[n], el=document.createElement('span'); el.className='node'+(t?' tool':''); el.dataset.tool=t?t.name:'';
+    el.innerHTML=t?`<span>${t.name}</span>${ROLE[t.role]?`<span class="role">${ROLE[t.role]}</span>`:''}${t.observed?`<span class="n" title="calls recorded on OpenBox">×${t.observed}</span>`:''}`:n;
+    if(t)el.title=`${t.name}(${Object.keys(t.args).join(', ')})\n${t.description}${t.document_arg?`\npath argument: ${t.document_arg}`:''}\ninput shape: ${t.input_shape||'list (SDK convention)'}`;
+    chain.appendChild(el);
+  });
+  const seen=g.tools.reduce((s,t)=>s+t.observed,0);
+  $('g-name').textContent=`${g.name} · ${g.tools.length} tools, ${g.nodes.length-2} nodes`;
+  $('g-sum').textContent='Roles judged from each tool\'s name, description and arguments. Highlighted tools are the ones the proposed policies bind to.';
+  const src=$('g-src'); src.textContent=g.sources.includes('observed')?`${seen} live calls folded in`:'compiled graph only'; src.className='badge '+(g.sources.includes('observed')?'active':'na');
+}
+function markBound(controls){document.querySelectorAll('.node.tool').forEach(el=>el.classList.toggle('bound',controls.some(c=>c.binding&&(c.binding.tool===el.dataset.tool||(c.binding.tools||[]).includes(el.dataset.tool)))));}
+fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(renderGraph).catch(()=>renderGraph([]));
 
 /* ── upload ── */
 const drop=$('drop'), file=$('file');
@@ -262,130 +361,114 @@ drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDe
 $('pick').addEventListener('click',e=>{e.preventDefault();file.click();});
 file.addEventListener('change',()=>{if(file.files[0])read(file.files[0]);});
 
-/* ── agent graph: what the SDK governs, straight from the compiled LangGraph ── */
-const ROLE={reads_material:'reads',searches_index:'searches',writes_internal:'drafts',files_to_store:'files',sends_outbound:'sends out',other:''};
-let GRAPHS=[];
-function renderGraph(gs){
-  GRAPHS=gs; const g=gs[0]; if(!g){$('graph').classList.remove('show');return;}
-  const tools=Object.fromEntries(g.tools.map(t=>[t.name,t])); const byNode={}; g.tools.forEach(t=>{if(t.node)byNode[t.node]=t;});
-  const edges=new Map(g.edges.map(e=>[e.source+'>'+e.target,e.conditional]));
-  const chain=$('chain'); chain.innerHTML='';
-  g.order.forEach((n,i)=>{
-    if(i){const a=document.createElement('span');const prev=g.order[i-1];a.className='arrow'+(edges.get(prev+'>'+n)===true?' cond':'');chain.appendChild(a);}
-    const t=byNode[n]; const el=document.createElement('span'); el.className='node'+(t?' tool':''); el.dataset.tool=t?t.name:'';
-    el.innerHTML=t?`<span>${t.name}</span><span class="role">${ROLE[t.role]||''}</span>${t.observed?`<span class="n" title="calls seen on OpenBox">×${t.observed}</span>`:''}`:n;
-    if(t)el.title=`${t.name}(${Object.keys(t.args).join(', ')})\n${t.description}${t.document_arg?`\npath argument: ${t.document_arg}`:''}\ninput: ${t.input_shape||'list'}`;
-    chain.appendChild(el);
-  });
-  const seen=g.tools.reduce((s,t)=>s+t.observed,0);
-  $('g-name').textContent=`${g.name} · ${g.tools.length} tools, ${g.nodes.length-2} nodes`;
-  $('g-sum').textContent=`roles judged from each tool's name, description and arguments`;
-  $('g-src').textContent=g.sources.includes('observed')?`${seen} live calls folded in`:'compiled graph only';
-  $('graph').classList.add('show');
-}
-function markBound(controls){document.querySelectorAll('.node.tool').forEach(el=>el.classList.toggle('bound',controls.some(c=>c.binding&&(c.binding.tool===el.dataset.tool||(c.binding.tools||[]).includes(el.dataset.tool)))));}
-fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(renderGraph).catch(()=>{});
-
-let draft=null, cards=[];
+let draft=null, rows=[];
 const ORDER=['map','parse','classify','extract','verify'];
-function setStage(s){document.querySelectorAll('.stage').forEach(d=>d.classList.toggle('on',d.dataset.s===s));}
+function setStage(s){const k=ORDER.indexOf(s);document.querySelectorAll('.stage').forEach(d=>d.classList.toggle('on',d.dataset.s===s));$('bar').style.width=`${Math.round(((k+.5)/ORDER.length)*100)}%`;}
 async function read(f){
-  drop.hidden=true; $('stages').classList.add('show'); setStage('map');
+  $('p-sub').textContent=`Reading ${f.name}…`; setStage('map');
   let i=0; const tick=setInterval(()=>{i=Math.min(i+1,ORDER.length-1);setStage(ORDER[i]);},900);
   const fd=new FormData(); fd.append('nda',f); fd.append('matter',MATTER);
   const t0=performance.now(); let res,body;
   try{res=await fetch('/propose',{method:'POST',body:fd});body=await res.json();}catch{clearInterval(tick);return fail('The compiler is not reachable. Start nda-web and try again.');}
   clearInterval(tick);
   if(!res.ok) return fail(body.detail||'The file could not be read as an NDA.');
-  draft=body;
-  body.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.classList.remove('on');el.querySelector('em').textContent=Math.round(x.ms)+' ms';}});
-  $('stats').hidden=false; $('s-clauses').textContent=body.coverage.clauses; $('s-policies').textContent=body.controls.length; $('s-time').textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
+  draft=body; $('bar').style.width='100%';
+  body.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.classList.remove('on');el.querySelector('em').textContent=' '+Math.round(x.ms)+' ms';}});
+  $('s-clauses').textContent=body.coverage.clauses; $('s-policies').textContent=body.controls.length;
+  $('p-sub').textContent=`${f.name} · ${body.controls.length} policies in ${((performance.now()-t0)/1000).toFixed(1)} s. Nothing is created on OpenBox until you apply.`;
   if(body.graphs&&body.graphs.length)renderGraph(body.graphs);
   render(body); markBound(body.controls);
 }
-function fail(msg){drop.hidden=false;$('stages').classList.remove('show');drop.querySelector('h2').textContent=msg;drop.querySelector('p').textContent='Drop the file again to retry.';}
+function fail(msg){$('bar').style.width='0';document.querySelectorAll('.stage').forEach(d=>d.classList.remove('on'));$('p-sub').textContent=msg;drop.querySelector('h3').textContent='Try again';}
 
-/* ── policy grid ── */
+/* ── proposals table ── */
 const KIND={policy_rule:['access','Access rule'],behavior_rule:['sequence','Sequence rule'],guardrail:['scan','Output scan'],judgement:['judge','Judgement']};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function bindCell(b){
+  if(!b||!b.tool)return '<span class="bind">—</span>';
+  if(b.tool==='every output')return '<span class="bind">Scans <code>every output</code></span>';
+  const live=GRAPHS[0]&&GRAPHS[0].sources.includes('observed');
+  const tools=b.tools&&b.tools.length>1?b.tools:[b.tool];
+  const seen=b.observed?`<span class="seen">${b.observed} calls seen</span>`:(live?`<span class="never" title="OpenBox has recorded other tool calls from this agent but never this one, so the rule is untested at runtime.">never seen live</span>`:'');
+  return `<span class="bind">${tools.map(t=>`<code>${esc(t)}</code>`).join('')}${b.arg?`<span>on</span><code>${esc(b.arg)}</code>`:''}${b.after?`<span>after</span>${b.after.map(t=>`<code>${esc(t)}</code>`).join('')}`:''}${seen}</span>`;
+}
 function render(d){
   const byId={}; d.clauses.forEach(c=>byId[c.id]=c);
   const held=Object.fromEntries(d.review.filter(r=>r.includes('ungrounded')).map(r=>[r.match(/§([\d.]+)/)[1],r.replace(/^§[\d.]+:\s*/,'').replace('ungrounded values','paraphrased:')]));
-  const grid=$('grid'); grid.innerHTML=''; cards=[];
+  const tb=$('rows'); tb.innerHTML=''; rows=[];
   const items=d.controls.map((c,i)=>({...c,i,cl:byId[c.clause_id]}));
   Object.keys(held).forEach(id=>items.push({held:true,clause_id:id,cl:byId[id],why:held[id]}));
-  items.forEach((it,k)=>{
-    const el=document.createElement('div'); el.className='card'+(it.held?' held':'');
+  if(!items.length)tb.innerHTML='<tr class="empty-row"><td colspan="5">No clause in this document maps to a policy for this agent.</td></tr>';
+  items.forEach(it=>{
+    const tr=document.createElement('tr'); tr.className='main'+(it.held?' held':'');
     const conf=it.verify_probability==null?null:Math.round(it.verify_probability*100);
-    const [bc,bl]=it.held?['held','Needs review']:(KIND[it.type]||['', it.type]);
-    el.innerHTML=`<div class="top"><span class="badge ${bc}">${bl}</span><span class="sec">§${it.clause_id}${it.note&&it.note.startsWith('also')?' ('+it.note+')':''}${it.cl.heading?' · '+it.cl.heading:''}</span></div>
-      <p class="rule">${it.held?'No policy proposed: the extraction paraphrased this clause instead of quoting it.':it.description}</p>
-      <p class="quote">${it.cl.text}</p>
-      ${bindRow(it)}
-      ${it.held?`<div class="note">${it.why}</div>`:`<div class="foot"><span class="meter" title="judge confidence"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'% confidence'}</span><span class="cb">${it.verify_probability>=.8?'✓':''}</span></div>`}`;
-    if(!it.held){el.tabIndex=0;el.dataset.i=it.i;if(it.verify_probability>=.8)el.classList.add('sel');
-      el.addEventListener('click',()=>toggle(el));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(el);}});cards.push(el);}
-    grid.appendChild(el); setTimeout(()=>el.classList.add('in'),reduce?0:60*k);
+    const [bc,bl]=it.held?['held','Needs review']:(KIND[it.type]||['',it.type]);
+    const title=it.held?'No policy proposed':(it.payload.rule_name||it.payload.name||'').replace(/^NDA \S+ §[\d.]+ /,'').replace(/^NDA \S+ /,'');
+    tr.innerHTML=`<td><button type="button" class="exp" aria-expanded="false"><span class="chev"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="m9 18 6-6-6-6"/></svg></span><span><span class="name">${esc(title)}</span><span class="desc">§${esc(it.clause_id)}${it.note&&it.note.startsWith('also')?' ('+esc(it.note)+')':''}${it.cl&&it.cl.heading?' · '+esc(it.cl.heading):''}</span></span></button></td>
+      <td><span class="badge ${bc}">${bl}</span></td>
+      <td>${it.held?'<span class="bind">—</span>':bindCell(it.binding)}</td>
+      <td>${it.held?`<span class="bind never">${esc(it.why)}</span>`:`<div class="conf"><span class="meter"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'%'}</span></div>`}</td>
+      <td class="c"><span class="cb" role="checkbox" tabindex="${it.held?-1:0}" aria-checked="false">${it.held?'':''}</span></td>`;
+    const det=document.createElement('tr'); det.className='detail'; det.hidden=true;
+    det.innerHTML=`<td colspan="5">${it.held?esc(it.why):esc(it.description)}<div class="k">Clause text</div><blockquote>${esc(it.cl?it.cl.text:'')}</blockquote></td>`;
+    tr.querySelector('.exp').addEventListener('click',e=>{e.stopPropagation();const open=det.hidden;det.hidden=!open;tr.classList.toggle('open',open);tr.querySelector('.exp').setAttribute('aria-expanded',String(open));});
+    if(!it.held){tr.dataset.i=it.i;if(it.verify_probability>=.8)select(tr,true);
+      tr.addEventListener('click',()=>toggle(tr));tr.querySelector('.cb').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(tr);}});rows.push(tr);}
+    tb.appendChild(tr); tb.appendChild(det);
   });
   const scope=d.classifications.filter(c=>c.kind==='not_enforceable').map(c=>byId[c.clause_id]);
   const sc=$('scope'); let html='';
-  if(scope.length)html+=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${c.id} ${c.heading}</span>`).join('');
-  (d.not_applicable||[]).forEach(n=>{const m=n.match(/^§([\d.]+)/);html+=`<span style="flex-basis:100%"></span><span class="chip" title="${n.replace(/"/g,'&quot;')}">§${m?m[1]:''} not applicable to this agent</span><span>${n.replace(/^§[\d.]+[^:]*:\s*/,'')}</span>`;});
-  if(html){sc.innerHTML=html;sc.classList.add('show');}
-  updateCount(); $('act').classList.add('show');
+  if(scope.length)html+=`<span>Nothing to enforce at runtime:</span>`+scope.map(c=>`<span class="chip">§${esc(c.id)} ${esc(c.heading)}</span>`).join('');
+  (d.not_applicable||[]).forEach(n=>{const m=n.match(/^§([\d.]+)/);html+=`<span class="why"><span class="badge na">§${m?m[1]:''} not applicable to this agent</span> ${esc(n.replace(/^§[\d.]+[^:]*:\s*/,''))}</span>`;});
+  sc.innerHTML=html;
+  drop.hidden=true; $('tablewrap').hidden=false; $('act').hidden=false; $('reset').hidden=false; updateCount();
 }
-function bindRow(it){
-  const b=it.binding; if(!b||!b.tool)return '';
-  if(b.tool==='every output')return `<div class="bind">Scans <code>every output</code> of the agent</div>`;
-  const tools=b.tools&&b.tools.length>1?b.tools:[b.tool];
-  const live=GRAPHS[0]&&GRAPHS[0].sources.includes('observed');
-  const seen=b.observed?`<span class="n">· ${b.observed} calls seen on OpenBox</span>`:(live?`<span class="n" title="OpenBox has recorded other tool calls from this agent but never this one, so the rule is untested at runtime.">· never seen live</span>`:'');
-  return `<div class="bind">Binds to ${tools.map(t=>`<code>${t}</code>`).join(' ')}${b.arg?` on <code>${b.arg}</code>`:''}${b.after?` after ${b.after.map(t=>`<code>${t}</code>`).join(' ')}`:''}${seen}</div>`;
-}
-function toggle(el){el.classList.toggle('sel');el.querySelector('.cb').textContent=el.classList.contains('sel')?'✓':'';updateCount();}
-function updateCount(){const n=cards.filter(c=>c.classList.contains('sel')).length;$('count').textContent=`${n} selected`;$('sub').textContent=n?'Policies are created inactive, tested, then activated.':'Select the policies to apply';$('apply').disabled=!n;}
+function select(tr,on){tr.classList.toggle('sel',on);const cb=tr.querySelector('.cb');cb.setAttribute('aria-checked',String(on));cb.innerHTML=on?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px;stroke-width:3"><path d="M20 6 9 17l-5-5"/></svg>':'';}
+function toggle(tr){select(tr,!tr.classList.contains('sel'));updateCount();}
+function updateCount(){const n=rows.filter(r=>r.classList.contains('sel')).length;$('count').textContent=`${n} selected`;$('sub').textContent=n?'Each policy is created inactive, tested against sample inputs, then activated.':'Select the policies to apply';$('apply').disabled=!n;}
 $('reset').addEventListener('click',()=>location.reload());
 
-/* ── side panel ── */
+/* ── enforced panel ── */
 const ledger=$('ledger');
-function row(o){const e=document.createElement('div');e.className='row '+(o.status||'');e.id=o.key||'';
-  e.innerHTML=`<div class="t"><span class="name" title="${o.name}">${o.name}</span><span class="badge ${o.bc||''}">${o.kind||''}</span></div>
-  <div class="st"><span class="dot"></span><span class="s">${o.label||o.status}</span><span class="opa">${o.opa?'synced to OPA':''}</span></div>${o.note?`<div class="why">${o.note}</div>`:''}`;
-  if(o.opa)e.classList.add('opa'); return e;}
 const KB={'access rule':['access','Access'],'sequence rule':['sequence','Sequence'],'output scan':['scan','Scan']};
+function row(o){const e=document.createElement('div');e.className='row '+(o.status||'');e.id=o.key||'';
+  e.innerHTML=`<div class="t"><span class="nm" title="${esc(o.name)}">${esc(o.name)}</span><span class="badge ${o.bc||'na'}">${esc(o.kind||'')}</span></div>
+  <div class="st"><span class="badge ${o.status}"><span class="dot" style="width:6px;height:6px;background:currentColor"></span><span class="s">${esc(o.label||o.status)}</span></span><span class="opa">${o.opa?'<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg>synced to OPA':''}</span></div>${o.note?`<div class="why">${esc(o.note)}</div>`:''}`;
+  if(o.opa)e.classList.add('opa'); return e;}
 async function loadState(){
   try{const r=await fetch(`/openbox/state?matter=${MATTER}`);const s=await r.json();
-    $('agentname').textContent=s.agent_name; $('livetxt').textContent=s.backend; $('livedot').className='dot';
-    $('sidesub').textContent=`Agent: ${s.agent_name}`; $('synctxt').textContent=`${s.items.length} active · ${s.items.filter(i=>i.opa_loaded).length} synced to OPA`; $('syncdot').className='dot';
+    $('livetxt').textContent=s.backend; $('livedot').className='dot';
+    $('sidesub').textContent=`Agent: ${s.agent_name} · ${s.items.length} active, ${s.items.filter(i=>i.opa_loaded).length} synced to OPA`; $('s-active').textContent=s.items.length;
     const keep=[...ledger.querySelectorAll('.row.failed,.row.applying')]; const names=new Set(s.items.map(i=>i.name));
-    ledger.innerHTML=''; keep.filter(e=>!names.has(e.querySelector('.name').textContent)).forEach(e=>ledger.appendChild(e));
-    s.items.forEach(it=>{const [bc,bl]=KB[it.kind]||['',it.kind];ledger.appendChild(row({name:it.name,kind:bl,bc,status:'active',label:'Active',opa:it.opa_loaded,key:'r-'+it.id}));});
+    ledger.innerHTML=''; keep.filter(e=>!names.has(e.querySelector('.nm').textContent)).forEach(e=>ledger.appendChild(e));
+    s.items.forEach(it=>{const [bc,bl]=KB[it.kind]||['na',it.kind];ledger.appendChild(row({name:it.name,kind:bl,bc,status:'active',label:'Active',opa:it.opa_loaded,key:'r-'+it.id}));});
     if(!ledger.children.length)ledger.innerHTML='<div class="empty">No policies enforced on this agent yet.</div>';
-  }catch{$('livetxt').textContent='OpenBox unreachable';$('livedot').className='dot off';$('synctxt').textContent='unreachable';$('syncdot').className='dot off';}
+  }catch{$('livetxt').textContent='unreachable';$('livedot').className='dot off';$('sidesub').textContent='OpenBox is not reachable.';}
 }
 loadState(); $('refresh').addEventListener('click',loadState);
 
 /* ── apply ── */
 $('apply').addEventListener('click',async()=>{
-  const chosen=cards.filter(c=>c.classList.contains('sel')); if(!chosen.length)return;
+  const chosen=rows.filter(r=>r.classList.contains('sel')); if(!chosen.length)return;
   $('apply').disabled=true; $('sub').textContent=`Applying ${chosen.length}…`;
   if(ledger.querySelector('.empty'))ledger.innerHTML='';
   const pending=[];
-  for(const el of chosen){const i=+el.dataset.i,c=draft.controls[i];const [bc,bl]=KIND[c.type]||['',c.type];
+  for(const tr of chosen){const i=+tr.dataset.i,c=draft.controls[i];const [bc,bl]=KIND[c.type]||['na',c.type];
     const e=row({name:c.payload.rule_name||c.payload.name,kind:bl.split(' ')[0],bc,status:'applying',label:'Applying',key:'p-'+i});
-    ledger.prepend(e); await fly(el,e); el.classList.remove('sel','in'); el.style.display='none'; pending.push({i,e});}
+    ledger.prepend(e); await fly(tr,e); select(tr,false); tr.style.display='none'; tr.nextElementSibling.hidden=true; pending.push({i,e});}
   const r=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft_id:draft.draft_id,selected:pending.map(p=>p.i)})});
   const d=await r.json();
   if(!r.ok){pending.forEach(p=>setRow(p.e,'failed',d.detail||'Apply failed'));$('sub').textContent='Could not apply';return;}
   d.results.forEach(res=>{const p=pending.find(p=>p.i===res.index);if(p)setRow(p.e,res.status,res.note);});
-  cards=cards.filter(c=>c.style.display!=='none'); updateCount();
+  rows=rows.filter(r=>r.style.display!=='none'); updateCount();
   $('sub').textContent=`${d.results.filter(x=>x.status==='active').length} of ${pending.length} active on OpenBox`;
   await loadState(); [10000,25000,40000].forEach(ms=>setTimeout(loadState,ms));
 });
-function setRow(e,status,note){e.className='row '+status;e.querySelector('.s').textContent=status==='active'?'Active':status==='failed'?'Not applied':status;
+function setRow(e,status,note){e.className='row '+status;const b=e.querySelector('.st .badge');b.className='badge '+status;b.querySelector('.s').textContent=status==='active'?'Active':status==='failed'?'Not applied':status;
   if(note){const n=document.createElement('div');n.className='why';n.textContent=note;e.appendChild(n);}}
 function fly(from,to){return new Promise(res=>{if(reduce)return res();const a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
   const g=document.createElement('div');g.className='fly';Object.assign(g.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',opacity:1});document.body.appendChild(g);
-  requestAnimationFrame(()=>Object.assign(g.style,{left:b.left+'px',top:b.top+'px',width:b.width+'px',height:b.height+'px',opacity:.15}));setTimeout(()=>{g.remove();res();},620);});}
+  requestAnimationFrame(()=>Object.assign(g.style,{left:b.left+'px',top:b.top+'px',width:b.width+'px',height:b.height+'px',opacity:.15}));setTimeout(()=>{g.remove();res();},580);});}
 </script>
 </body>
 </html>
