@@ -63,7 +63,8 @@ select.input{appearance:none;-webkit-appearance:none;height:40px;min-width:260px
 .metric span{color:var(--muted-fg)}
 
 /* ── agent graph card ── */
-#graphcard{margin-bottom:24px;min-height:166px}
+#graphcard{margin-bottom:24px;min-height:196px}
+.plat{padding:10px 20px 0;font-size:12px;color:var(--muted-fg);min-height:28px}
 #g-src{min-width:150px;justify-content:center}
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border)}
 .card-head h2{margin:0;font-size:15px;font-weight:600;color:var(--heading)}
@@ -252,6 +253,7 @@ tr.held .cb{visibility:hidden}
       <div><h2 id="g-name">Agent graph</h2><p id="g-sum">Reading the agent's compiled graph…</p></div>
       <span class="badge na" id="g-src">…</span>
     </div>
+    <div class="plat" id="g-plat">Reading the platform catalog…</div>
     <div class="chain" id="chain"><span class="skeleton"></span><span class="skeleton" style="width:90px"></span><span class="skeleton" style="width:140px"></span><span class="skeleton" style="width:110px"></span><span class="skeleton" style="width:100px"></span><span class="skeleton" style="width:130px"></span><span class="skeleton" style="width:120px"></span><span class="skeleton" style="width:100px;margin-top:6px"></span><span class="skeleton" style="width:140px;margin-top:6px"></span></div>
   </section>
 
@@ -355,7 +357,8 @@ function renderGraph(gs){
   const src=$('g-src'); src.textContent=g.sources.includes('observed')?`${seen} live calls folded in`:'compiled graph only'; src.className='badge '+(g.sources.includes('observed')?'active':'na');
 }
 function markBound(controls){document.querySelectorAll('.node.tool').forEach(el=>el.classList.toggle('bound',controls.some(c=>c.binding&&(c.binding.tool===el.dataset.tool||(c.binding.tools||[]).includes(el.dataset.tool)))));}
-fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(renderGraph).catch(()=>renderGraph([]));
+function renderPlatform(pf){if(!pf)return;const ex=Object.values(pf.existing_rules||{}).reduce((a,b)=>a+b,0);$('g-plat').textContent=`Platform catalog held locally: ${pf.fields} input fields, ${pf.operators.length} operators, ${pf.decisions.length} decisions, ${pf.span_types} span types · ${ex} rule${ex===1?'':'s'} already on the agent`;}
+fetch(`/agent-graph?matter=${MATTER}`).then(r=>r.json()).then(d=>{renderGraph(d.graphs||[]);renderPlatform(d.platform);}).catch(()=>renderGraph([]));
 
 /* ── upload ── */
 const drop=$('drop'), file=$('file');
@@ -381,7 +384,7 @@ async function read(f){
   body.timings.forEach(x=>{const el=document.querySelector(`.stage[data-s="${x.stage}"]`);if(el){el.classList.add('done');el.classList.remove('on');el.querySelector('em').textContent=' '+Math.round(x.ms)+' ms';}});
   $('s-clauses').textContent=body.coverage.clauses; $('s-policies').textContent=body.controls.length;
   $('p-sub').textContent=`${f.name} · ${body.controls.length} policies in ${((performance.now()-t0)/1000).toFixed(1)} s. Nothing is created on OpenBox until you apply.`;
-  if(body.graphs&&body.graphs.length)renderGraph(body.graphs);
+  if(body.graphs&&body.graphs.length)renderGraph(body.graphs); renderPlatform(body.platform);
   render(body); markBound(body.controls);
 }
 function fail(msg){$('bar').style.width='0';document.querySelectorAll('.stage').forEach(d=>d.classList.remove('on'));$('p-sub').textContent=msg;drop.querySelector('h3').textContent='Try again';}
@@ -408,10 +411,11 @@ function render(d){
     const tr=document.createElement('tr'); tr.className='main'+(it.held?' held':'');
     const conf=it.verify_probability==null?null:Math.round(it.verify_probability*100);
     const dec=it.held?null:(it.payload.decision||'BLOCK');
+    const sub=it.status==='review'&&it.note&&!it.note.startsWith('also')?`<span class="bind never">${esc(it.note)}</span>`:'';
     const title=it.held?'No policy proposed':(it.payload.rule_name||it.payload.name||'').replace(/^NDA \S+ §[\d.]+ /,'').replace(/^NDA \S+ /,'');
     tr.innerHTML=`<td><button type="button" class="exp" aria-expanded="false"><span class="chev"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="m9 18 6-6-6-6"/></svg></span><span><span class="name">${esc(title)}</span><span class="desc">§${esc(it.clause_id)}${it.note&&it.note.startsWith('also')?' ('+esc(it.note)+')':''}${it.cl&&it.cl.heading?' · '+esc(it.cl.heading):''}</span></span></button></td>
       <td>${it.held?'<span class="badge held">Needs review</span>':`<span class="badge ${DECISION[dec]||'na'}">${dec}</span>`}</td>
-      <td>${it.held?'<span class="bind">—</span>':bindCell(it.binding)}</td>
+      <td>${it.held?'<span class="bind">—</span>':bindCell(it.binding)}${sub}</td>
       <td>${it.held?`<span class="bind never">${esc(it.why)}</span>`:`<div class="conf"><span class="meter"><i style="--p:${conf||0}%"></i></span><span>${conf==null?'–':conf+'%'}</span></div>`}</td>
       <td class="c"><span class="cb" role="checkbox" tabindex="${it.held?-1:0}" aria-checked="false">${it.held?'':''}</span></td>`;
     const det=document.createElement('tr'); det.className='detail'; det.hidden=true;

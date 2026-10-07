@@ -93,6 +93,8 @@ class ToolSpec(BaseModel):
     observed: int = 0
     observed_args: list[str] = Field(default_factory=list)
     input_shape: Literal["list", "dict", ""] = ""
+    # Span semantic types core recorded inside this tool's calls (file_read, http_post...).
+    span_types: list[str] = Field(default_factory=list)
 
     @property
     def document_arg(self) -> str | None:
@@ -151,6 +153,11 @@ class AgentGraph(BaseModel):
 
     def with_role(self, *roles: str) -> list[ToolSpec]:
         return [t for t in self.tools if t.role in roles]
+
+    def tools_with_span(self, *span_types: str) -> list[ToolSpec]:
+        """Tools inside whose calls core has recorded one of these span types."""
+
+        return [t for t in self.tools if any(s in t.span_types for s in span_types)]
 
     def reaches(self, source: str, target: str) -> bool:
         """Whether a run can call `target` after `source` (path in the graph)."""
@@ -270,6 +277,10 @@ def observe(events: list[dict[str, Any]], graph: AgentGraph) -> AgentGraph:
             spec = ToolSpec(name=name)
             graph.tools.append(spec)
         spec.observed += 1
+        for span in event.get("spans") or []:
+            kind = span.get("span_type") or span.get("semantic_type")
+            if kind and kind not in spec.span_types:
+                spec.span_types.append(kind)
         payload = event.get("input")
         if isinstance(payload, list) and payload and isinstance(payload[0], dict):
             spec.input_shape = "list"

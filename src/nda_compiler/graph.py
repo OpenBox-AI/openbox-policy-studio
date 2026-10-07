@@ -4,10 +4,11 @@
 
 `map` reads the governed agent's own graph (its tools, their arguments, what
 each does) and folds in what OpenBox has already observed the agent calling,
-so every later template binds to real tool calls. Each node fans out
-internally (asyncio.gather) over clauses or controls, so wall-clock is one
-round trip per stage, not one per clause. Every node records its own timing;
-the report shows where the seconds went.
+so every later template binds to real tool calls. The platform context (what
+a policy rule can express, which rules already exist) is handed to the judge
+once and rides along with every question. Each node fans out internally
+(asyncio.gather) over clauses or controls, so wall-clock is one round trip
+per stage, not one per clause. Every node records its own timing.
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ from .models import (
     StageTiming,
 )
 from .openbox_api import OpenBoxBackend, apply_all
+from .platform_context import PlatformContext, load_context
 from .templates import build_controls, describe, not_applicable, summarize
 
 EventSource = Callable[[str], Awaitable[list[dict[str, Any]]]]
@@ -64,17 +66,26 @@ class Services:
         bindings: Bindings,
         verify_threshold: float | None = None,
         events: EventSource | None = None,
+        platform: PlatformContext | None = None,
     ) -> None:
         self.judge = judge
         self.extractor = extractor
         self.backend = backend
         self.bindings = bindings
         self.events = events
+        self.platform = platform if platform is not None else load_context(
+            Path(os.environ.get("PLATFORM_DIR", "platform"))
+        )
         self.verify_threshold = (
             verify_threshold
             if verify_threshold is not None
             else float(os.environ.get("VERIFY_THRESHOLD", "0.8"))
         )
+        # The judge sees the platform the same way on every question.
+        self.judge.platform = self.platform.summary()
+        self.judge.existing = {
+            a.id: self.platform.existing_summary(a.id) for a in bindings.all_agents
+        }
         # Tool roles depend on the tool, not the NDA; judged once per process.
         self._roles: dict[str, tuple[str, float]] = {}
 
@@ -138,6 +149,13 @@ def build_graph(services: Services):
         review = [
             f"§{o.clause_id}: ungrounded values {o.ungrounded}" for o in obligations if o.ungrounded
         ]
+        # Which platform decision each clause calls for, from its wording.
+        grounded = [o for o in obligations if not o.ungrounded]
+        decisions = await services.judge.decide(grounded, services.platform.decisions)
+        obligations = [
+            o.model_copy(update={"decision": decisions.get(o.clause_id, "BLOCK")})
+            for o in obligations
+        ]
         return _timed("extract", state, started, {"obligations": obligations, "review": review})
 
     async def build(state: CompileState) -> dict:
@@ -167,6 +185,16 @@ def build_graph(services: Services):
                     continue
                 seen[key] = control
                 controls.append(control)
+        # Every field a rule uses must be one OPA actually sees.
+        for control in controls:
+            unknown = [
+                c["left"]["field"]
+                for c in control.payload["conditions"]
+                if services.platform.fields and services.platform.field(c["left"]["field"]) is None
+            ]
+            if unknown:
+                control.status = "review"
+                control.note = f"fields not in the platform catalog: {', '.join(unknown)}"
         return _timed("build", state, started, {"controls": controls, "not_applicable": skipped})
 
     async def verify(state: CompileState) -> dict:
@@ -175,12 +203,18 @@ def build_graph(services: Services):
         controls = state["controls"]
         probabilities = await verify_all(
             services.judge,
-            [(by_id[c.clause_id], c.payload, describe(c, services.bindings)) for c in controls],
+            [
+                (by_id[c.clause_id], {**c.payload, "agent_id": c.agent_id}, describe(c, services.bindings))
+                for c in controls
+            ],
         )
         verified: list[Control] = []
         review = list(state.get("review", []))
         for control, probability in zip(controls, probabilities, strict=True):
-            if probability >= services.verify_threshold:
+            if control.status == "review":
+                verified.append(control.model_copy(update={"verify_probability": probability}))
+                review.append(f"§{control.clause_id}: {control.note}")
+            elif probability >= services.verify_threshold:
                 verified.append(
                     control.model_copy(
                         update={"verify_probability": probability, "status": "verified"}

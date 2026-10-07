@@ -169,10 +169,23 @@ def _graph_json(bindings) -> list[dict[str, Any]]:
     return out
 
 
-def _report_json(report: CompileReport, bindings) -> dict[str, Any]:
+def _platform_json(services: Services) -> dict[str, Any]:
+    p = services.platform
+    return {
+        "synced_at": p.synced_at,
+        "fields": len(p.fields),
+        "operators": p.operators,
+        "decisions": p.decisions,
+        "span_types": len(p.span_fields),
+        "existing_rules": {a: len(r) for a, r in p.existing_rules.items()},
+    }
+
+
+def _report_json(report: CompileReport, bindings, services: Services) -> dict[str, Any]:
     body = report.model_dump(mode="json")
     body["coverage"] = report.coverage
     body["graphs"] = _graph_json(bindings)
+    body["platform"] = _platform_json(services)
     for control, raw in zip(report.controls, body["controls"], strict=True):
         raw["description"] = describe(control, bindings)
     return body
@@ -203,7 +216,7 @@ async def agent_graph(matter: str = "trial") -> JSONResponse:
     services = _services(bindings)
     for agent_id, graph in list(bindings.graphs.items()):
         bindings.graphs[agent_id] = await services.map_agent(graph)
-    return JSONResponse(_graph_json(bindings))
+    return JSONResponse({"graphs": _graph_json(bindings), "platform": _platform_json(services)})
 
 
 @app.post("/propose")
@@ -230,7 +243,7 @@ async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONR
     ]
     draft_id = uuid.uuid4().hex[:12]
     _DRAFTS[draft_id] = (report, matter)
-    body = _report_json(report, bindings)
+    body = _report_json(report, bindings, services)
     body["draft_id"] = draft_id
     return JSONResponse(body)
 

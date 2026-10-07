@@ -1,0 +1,1093 @@
+{
+  "synced_at": "2026-10-07T11:00:16+00:00",
+  "sources": {
+    "fields": "openbox-fe policy-field-catalog.ts",
+    "conditions": "openbox-fe policy-rule-conditions.ts",
+    "span_fields": "openbox-backend behavior-rule-match-field-catalog.ts"
+  },
+  "decisions": [
+    "ALLOW",
+    "CONSTRAIN",
+    "REQUIRE_APPROVAL",
+    "BLOCK",
+    "HALT"
+  ],
+  "operators": [
+    "equals",
+    "not_equals",
+    "contains",
+    "not_contains",
+    "starts_with",
+    "greater_than",
+    "greater_than_or_equal",
+    "less_than",
+    "less_than_or_equal",
+    "exists",
+    "not_exists"
+  ],
+  "transforms": [
+    "value",
+    "count"
+  ],
+  "value_types": [
+    "string",
+    "number",
+    "boolean"
+  ],
+  "event_types": [
+    "ActivityStarted",
+    "ActivityCompleted",
+    "SignalReceived"
+  ],
+  "span_semantic_types": [
+    "http_get",
+    "http_post",
+    "http_put",
+    "http_patch",
+    "http_delete",
+    "http",
+    "llm_completion",
+    "llm_embedding",
+    "llm_tool_call",
+    "llm_gen_ai",
+    "llm_routing",
+    "llm_provenance",
+    "mcp_tool_call",
+    "database_select",
+    "database_insert",
+    "database_update",
+    "database_delete",
+    "database_query",
+    "file_read",
+    "file_write",
+    "file_open",
+    "file_delete",
+    "internal",
+    "sandbox_execution"
+  ],
+  "fields": [
+    {
+      "key": "event_type",
+      "label": "Event Type",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": [
+        "ActivityStarted",
+        "ActivityCompleted",
+        "SignalReceived"
+      ]
+    },
+    {
+      "key": "source",
+      "label": "Source",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "workflow_id",
+      "label": "Workflow ID",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "run_id",
+      "label": "Run ID",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "workflow_type",
+      "label": "Workflow Type",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "task_queue",
+      "label": "Task Queue",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "timestamp",
+      "label": "Timestamp",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "span_count",
+      "label": "Span Count",
+      "type": "number",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "hook_trigger",
+      "label": "Hook Trigger",
+      "type": "boolean",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "agent_id",
+      "label": "Agent ID",
+      "type": "string",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "trust_tier",
+      "label": "Trust Tier",
+      "type": "number",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "risk_tier",
+      "label": "Risk Tier",
+      "type": "number",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "trust_score",
+      "label": "Trust Score",
+      "type": "number",
+      "group": "Event - Common",
+      "enum_values": []
+    },
+    {
+      "key": "activity_id",
+      "label": "Activity ID",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "activity_type",
+      "label": "Activity Type",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "profile_id",
+      "label": "Profile ID",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "attempt",
+      "label": "Attempt",
+      "type": "number",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "status",
+      "label": "Status",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "duration_ms",
+      "label": "Duration (ms)",
+      "type": "number",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "error.type",
+      "label": "Error Type",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "error.message",
+      "label": "Error Message",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "activity_input",
+      "label": "Activity Input",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "activity_output",
+      "label": "Activity Output",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "prompt",
+      "label": "Prompt",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "messages",
+      "label": "Messages",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "message_contents",
+      "label": "Message Contents",
+      "type": "string",
+      "group": "Event - Activity",
+      "enum_values": []
+    },
+    {
+      "key": "signal_name",
+      "label": "Signal Name",
+      "type": "string",
+      "group": "Event - Signal",
+      "enum_values": []
+    },
+    {
+      "key": "signal_args",
+      "label": "Signal Args",
+      "type": "string",
+      "group": "Event - Signal",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].semantic_type",
+      "label": "Semantic Type",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": [
+        "http_get",
+        "http_post",
+        "http_put",
+        "http_patch",
+        "http_delete",
+        "http",
+        "llm_completion",
+        "llm_embedding",
+        "llm_tool_call",
+        "llm_gen_ai",
+        "llm_routing",
+        "llm_provenance",
+        "mcp_tool_call",
+        "database_select",
+        "database_insert",
+        "database_update",
+        "database_delete",
+        "database_query",
+        "file_read",
+        "file_write",
+        "file_open",
+        "file_delete",
+        "internal",
+        "sandbox_execution"
+      ]
+    },
+    {
+      "key": "spans[_].span_id",
+      "label": "Span ID",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].trace_id",
+      "label": "Trace ID",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].name",
+      "label": "Name",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].stage",
+      "label": "Stage",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": [
+        "started",
+        "completed"
+      ]
+    },
+    {
+      "key": "spans[_].hook_type",
+      "label": "Hook Type",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": [
+        "http_request",
+        "db_query",
+        "file_operation",
+        "function_call",
+        "sandbox_execution"
+      ]
+    },
+    {
+      "key": "spans[_].duration_ns",
+      "label": "Duration (ns)",
+      "type": "number",
+      "group": "Span - Common",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].status.code",
+      "label": "Status Code (gRPC)",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].error",
+      "label": "Error",
+      "type": "string",
+      "group": "Span - Common",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].http_method",
+      "label": "HTTP Method",
+      "type": "string",
+      "group": "Span - HTTP",
+      "enum_values": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    {
+      "key": "spans[_].http_url",
+      "label": "HTTP URL",
+      "type": "string",
+      "group": "Span - HTTP",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].http_status_code",
+      "label": "HTTP Status Code",
+      "type": "number",
+      "group": "Span - HTTP",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].request_body",
+      "label": "Request Body",
+      "type": "string",
+      "group": "Span - HTTP",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].response_body",
+      "label": "Response Body",
+      "type": "string",
+      "group": "Span - HTTP",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].http_url",
+      "label": "HTTP URL",
+      "type": "string",
+      "group": "Span - LLM",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].http_status_code",
+      "label": "HTTP Status Code",
+      "type": "number",
+      "group": "Span - LLM",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].request_body",
+      "label": "Request Body",
+      "type": "string",
+      "group": "Span - LLM",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].response_body",
+      "label": "Response Body",
+      "type": "string",
+      "group": "Span - LLM",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.declared",
+      "label": "Routing Declared",
+      "type": "boolean",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.requested_only",
+      "label": "Requested Providers (only)",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.requested_order",
+      "label": "Requested Provider Order",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.allow_fallbacks",
+      "label": "Fallbacks Allowed",
+      "type": "boolean",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.requested_models",
+      "label": "Requested Model Chain",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.request.model",
+      "label": "Request Model",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.resolution",
+      "label": "Routing Resolution",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.model.requested",
+      "label": "Requested Model",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.residency.declared",
+      "label": "Residency Declared",
+      "type": "boolean",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.residency.approved_regions",
+      "label": "Approved Regions",
+      "type": "string",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.residency.require_own_key",
+      "label": "Own Key Required",
+      "type": "boolean",
+      "group": "Span - LLM Routing",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.routing.honored",
+      "label": "Routing Honored",
+      "type": "boolean",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.model.honored",
+      "label": "Model Honored",
+      "type": "boolean",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.upstream.provider",
+      "label": "Serving Provider",
+      "type": "string",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.upstream.data_region",
+      "label": "Data Region",
+      "type": "string",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.upstream.is_byok",
+      "label": "Served With Own Key (BYOK)",
+      "type": "boolean",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.residency.region_honored",
+      "label": "Residency Honored",
+      "type": "boolean",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.openbox.residency.own_key_honored",
+      "label": "Own Key Honored",
+      "type": "boolean",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.upstream.latency_ms",
+      "label": "Upstream Latency (ms)",
+      "type": "number",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.response.model",
+      "label": "Served Model",
+      "type": "string",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.response.finish_reason",
+      "label": "Finish Reason",
+      "type": "string",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.routing.fallback_attempts",
+      "label": "Fallback Attempts",
+      "type": "number",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.routing.providers_tried",
+      "label": "Providers Tried",
+      "type": "string",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.generation.id",
+      "label": "Generation ID",
+      "type": "string",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.usage.total_cost",
+      "label": "Total Cost",
+      "type": "number",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.usage.upstream_cost",
+      "label": "Upstream Cost",
+      "type": "number",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.usage.tokens_prompt",
+      "label": "Prompt Tokens",
+      "type": "number",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].attributes.gen_ai.usage.tokens_completion",
+      "label": "Completion Tokens",
+      "type": "number",
+      "group": "Span - LLM Provenance",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].db_system",
+      "label": "DB System",
+      "type": "string",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].db_name",
+      "label": "DB Name",
+      "type": "string",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].db_operation",
+      "label": "DB Operation",
+      "type": "string",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].db_statement",
+      "label": "DB Statement",
+      "type": "string",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].server_address",
+      "label": "Server Address",
+      "type": "string",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].server_port",
+      "label": "Server Port",
+      "type": "number",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].rowcount",
+      "label": "Row Count",
+      "type": "number",
+      "group": "Span - Database",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].file_path",
+      "label": "File Path",
+      "type": "string",
+      "group": "Span - File",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].file_mode",
+      "label": "File Mode",
+      "type": "string",
+      "group": "Span - File",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].file_operation",
+      "label": "File Operation",
+      "type": "string",
+      "group": "Span - File",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].bytes_read",
+      "label": "Bytes Read",
+      "type": "number",
+      "group": "Span - File",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].bytes_written",
+      "label": "Bytes Written",
+      "type": "number",
+      "group": "Span - File",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].lines_count",
+      "label": "Lines Count",
+      "type": "number",
+      "group": "Span - File",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].function",
+      "label": "Function",
+      "type": "string",
+      "group": "Span - Internal Function",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].module",
+      "label": "Module",
+      "type": "string",
+      "group": "Span - Internal Function",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].args",
+      "label": "Arguments",
+      "type": "string",
+      "group": "Span - Internal Function",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].result",
+      "label": "Result",
+      "type": "string",
+      "group": "Span - Internal Function",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].semantic_type",
+      "label": "Semantic Type",
+      "type": "string",
+      "group": "Span - MCP",
+      "enum_values": [
+        "http_get",
+        "http_post",
+        "http_put",
+        "http_patch",
+        "http_delete",
+        "http",
+        "llm_completion",
+        "llm_embedding",
+        "llm_tool_call",
+        "llm_gen_ai",
+        "llm_routing",
+        "llm_provenance",
+        "mcp_tool_call",
+        "database_select",
+        "database_insert",
+        "database_update",
+        "database_delete",
+        "database_query",
+        "file_read",
+        "file_write",
+        "file_open",
+        "file_delete",
+        "internal",
+        "sandbox_execution"
+      ]
+    },
+    {
+      "key": "spans[_].name",
+      "label": "Name",
+      "type": "string",
+      "group": "Span - MCP",
+      "enum_values": []
+    },
+    {
+      "key": "spans[_].hook_type",
+      "label": "Hook Type",
+      "type": "string",
+      "group": "Span - MCP",
+      "enum_values": [
+        "http_request",
+        "db_query",
+        "file_operation",
+        "function_call",
+        "sandbox_execution"
+      ]
+    }
+  ],
+  "span_fields": {
+    "http_get": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_method",
+      "http_url",
+      "http_status_code",
+      "request_body",
+      "response_body"
+    ],
+    "http_post": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_method",
+      "http_url",
+      "http_status_code",
+      "request_body",
+      "response_body"
+    ],
+    "http_put": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_method",
+      "http_url",
+      "http_status_code",
+      "request_body",
+      "response_body"
+    ],
+    "http_patch": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_method",
+      "http_url",
+      "http_status_code",
+      "request_body",
+      "response_body"
+    ],
+    "http_delete": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_method",
+      "http_url",
+      "http_status_code",
+      "request_body",
+      "response_body"
+    ],
+    "http": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_method",
+      "http_url",
+      "http_status_code",
+      "request_body",
+      "response_body"
+    ],
+    "llm_completion": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_url",
+      "request_body",
+      "response_body",
+      "http_status_code"
+    ],
+    "llm_embedding": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_url",
+      "request_body",
+      "response_body",
+      "http_status_code"
+    ],
+    "llm_tool_call": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_url",
+      "request_body",
+      "response_body",
+      "http_status_code"
+    ],
+    "llm_gen_ai": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "http_url",
+      "request_body",
+      "response_body",
+      "http_status_code"
+    ],
+    "llm_routing": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error"
+    ],
+    "llm_provenance": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error"
+    ],
+    "database_select": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "db_system",
+      "db_name",
+      "db_operation",
+      "db_statement",
+      "server_address",
+      "server_port",
+      "rowcount"
+    ],
+    "database_insert": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "db_system",
+      "db_name",
+      "db_operation",
+      "db_statement",
+      "server_address",
+      "server_port",
+      "rowcount"
+    ],
+    "database_update": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "db_system",
+      "db_name",
+      "db_operation",
+      "db_statement",
+      "server_address",
+      "server_port",
+      "rowcount"
+    ],
+    "database_delete": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "db_system",
+      "db_name",
+      "db_operation",
+      "db_statement",
+      "server_address",
+      "server_port",
+      "rowcount"
+    ],
+    "database_query": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "db_system",
+      "db_name",
+      "db_operation",
+      "db_statement",
+      "server_address",
+      "server_port",
+      "rowcount"
+    ],
+    "file_read": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "file_path",
+      "file_mode",
+      "file_operation",
+      "bytes_read",
+      "bytes_written",
+      "lines_count"
+    ],
+    "file_write": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "file_path",
+      "file_mode",
+      "file_operation",
+      "bytes_read",
+      "bytes_written",
+      "lines_count"
+    ],
+    "file_open": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "file_path",
+      "file_mode",
+      "file_operation",
+      "bytes_read",
+      "bytes_written",
+      "lines_count"
+    ],
+    "file_delete": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "file_path",
+      "file_mode",
+      "file_operation",
+      "bytes_read",
+      "bytes_written",
+      "lines_count"
+    ],
+    "mcp_tool_call": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error"
+    ],
+    "shell_command": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error"
+    ],
+    "sandbox_execution": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "function",
+      "module",
+      "args",
+      "result"
+    ],
+    "internal": [
+      "name",
+      "hook_type",
+      "duration_ns",
+      "status.code",
+      "error",
+      "function",
+      "module",
+      "args",
+      "result"
+    ]
+  }
+}

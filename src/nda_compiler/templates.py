@@ -89,7 +89,7 @@ def _rule(
             "priority": priority,
             "match_mode": "all",
             "conditions": conditions,
-            "decision": "BLOCK",
+            "decision": obligation.decision,
             "reason": _reason(obligation, bindings),
             "constraints": [],
             "trust_impact": "medium",
@@ -130,7 +130,7 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
                             TestCase(
                                 label=f"{agent.name} {tool.name} covered folder",
                                 input=_tool_event(agent.id, tool, arg, f"{folder}deck.docx"),
-                                expect="BLOCK",
+                                expect=obligation.decision,
                             ),
                             TestCase(
                                 label=f"{agent.name} {tool.name} other folder",
@@ -154,7 +154,12 @@ def third_party_disclosure(obligation: Obligation, bindings: Bindings) -> list[C
 
     controls = []
     for agent in bindings.all_agents:
-        for tool in bindings.tools_for(agent).outbound:
+        tools = bindings.tools_for(agent)
+        # Tools core has seen making outbound HTTP calls count as senders too,
+        # whatever the judge made of their name: the spans are the evidence.
+        http_tools = tools.graph.tools_with_span("http_post", "http_put", "http_patch", "http") if tools.graph else []
+        senders = [*tools.outbound, *(t for t in http_tools if t not in tools.outbound)]
+        for tool in senders:
             arg = tool.text_arg or next(iter(tool.args), "payload")
             controls.append(
                 _rule(
@@ -168,7 +173,7 @@ def third_party_disclosure(obligation: Obligation, bindings: Bindings) -> list[C
                         TestCase(
                             label=f"{agent.name} {tool.name}",
                             input=_tool_event(agent.id, tool, arg, "quarterly summary"),
-                            expect="BLOCK",
+                            expect=obligation.decision,
                         ),
                         TestCase(
                             label=f"{agent.name} other tool",
@@ -181,7 +186,7 @@ def third_party_disclosure(obligation: Obligation, bindings: Bindings) -> list[C
                             expect="ALLOW",
                         ),
                     ],
-                    _binding(tool, None, "send"),
+                    {**_binding(tool, None, "send"), "spans": tool.span_types},
                 )
             )
     return controls
@@ -218,7 +223,7 @@ def marked_material(obligation: Obligation, bindings: Bindings) -> list[Control]
                             TestCase(
                                 label=f"{agent.name} {tool.name} mentions {word}",
                                 input=_tool_event(agent.id, tool, arg, f"Notes on {word} pricing"),
-                                expect="BLOCK",
+                                expect=obligation.decision,
                             ),
                             TestCase(
                                 label=f"{agent.name} {tool.name} plain text",
@@ -241,11 +246,15 @@ def not_applicable(obligation: Obligation, bindings: Bindings) -> list[str]:
             tools = bindings.tools_for(agent)
             if tools.outbound:
                 continue
+            if tools.graph and tools.graph.tools_with_span("http_post", "http_put", "http_patch", "http"):
+                continue  # covered by the span-evidenced senders above
             path = " → ".join(tools.graph.ordered_nodes()) if tools.graph else "graph not exported"
             filing = ", ".join(t.name for t in tools.file) or "none"
+            spans = sorted({s for t in (tools.graph.tools if tools.graph else []) for s in t.span_types})
+            seen = f" Spans recorded in its calls: {', '.join(spans)}; no outbound HTTP among them." if spans else ""
             notes.append(
                 f"§{obligation.clause_id} third-party disclosure: {agent.name} has no tool that "
-                f"sends outside the firm (graph: {path}). Its only way to move material is "
+                f"sends outside the firm (graph: {path}).{seen} Its only way to move material is "
                 f"{filing}, which the access rules already scope to the covered folder."
             )
     if obligation.kind == ControlKind.USE_RESTRICTION:
@@ -317,20 +326,27 @@ def describe(control: Control, bindings: Bindings) -> str:
     b = control.binding
     tool = b.get("tool")
     what = b.get("what")
+    effect = {
+        "BLOCK": "blocked from calling",
+        "HALT": "stopped entirely (the whole run halts) if it calls",
+        "REQUIRE_APPROVAL": "held for a person's approval in OpenBox before it may call",
+        "CONSTRAIN": "constrained when it calls",
+        "ALLOW": "allowed to call",
+    }.get(control.payload.get("decision", "BLOCK"), "blocked from calling")
     if what in ("read", "file"):
         return (
-            f"Agent {agent} ({role} under this NDA{rep_note}) is blocked from calling its "
+            f"Agent {agent} ({role} under this NDA{rep_note}) is {effect} its "
             f"'{tool}' tool to {what} any document whose '{b.get('arg')}' lies under the "
             f"{party} folder {folders}. Documents in other folders are allowed."
         )
     if what == "send":
         return (
-            f"Agent {agent} is blocked from calling its '{tool}' tool at all, because that tool "
+            f"Agent {agent} is {effect} its '{tool}' tool at all, because that tool "
             f"sends content outside the firm's systems and the NDA forbids disclosure to third "
             f"parties. Its other tools are unaffected."
         )
     return (
-        f"Agent {agent} is blocked from calling its '{tool}' tool whenever the '{b.get('arg')}' "
+        f"Agent {agent} is {effect} its '{tool}' tool whenever the '{b.get('arg')}' "
         f"it passes contains the confidential marking '{b.get('term')}'. Calls without that "
         f"marking are allowed."
     )

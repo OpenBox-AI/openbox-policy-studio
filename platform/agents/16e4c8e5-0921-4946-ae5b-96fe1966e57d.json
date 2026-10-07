@@ -1,0 +1,86 @@
+[
+  {
+    "id": "ae42bb9f-dd71-495c-a80b-d0e872f80f85",
+    "base_rule_id": "5a2866e0-293f-4d1f-aee3-1d09903a34b2",
+    "rule_name": "NDA trial \u00a72 read_document 0001/10001/",
+    "decision": "BLOCK",
+    "priority": 90,
+    "match_mode": "all",
+    "conditions": [
+      {
+        "id": "tool",
+        "left": {
+          "kind": "field",
+          "field": "activity_type",
+          "transform": "value",
+          "valueType": "string"
+        },
+        "right": {
+          "kind": "literal",
+          "value": "read_document",
+          "valueType": "string"
+        },
+        "operator": "equals"
+      },
+      {
+        "id": "folder",
+        "left": {
+          "kind": "field",
+          "field": "activity_input[0].document_id",
+          "transform": "value",
+          "valueType": "string"
+        },
+        "right": {
+          "kind": "literal",
+          "value": "0001/10001/",
+          "valueType": "string"
+        },
+        "operator": "starts_with"
+      }
+    ],
+    "is_active": true,
+    "created_at": "2026-10-07T10:56:48.219Z"
+  },
+  {
+    "id": "21b96009-7403-4a74-a050-f838b1dbe900",
+    "base_rule_id": "e9ed8abe-e7c5-4cdf-963d-793c0ef5bf01",
+    "rule_name": "NDA trial \u00a72 upload_document 0001/10001/",
+    "decision": "BLOCK",
+    "priority": 90,
+    "match_mode": "all",
+    "conditions": [
+      {
+        "id": "tool",
+        "left": {
+          "kind": "field",
+          "field": "activity_type",
+          "transform": "value",
+          "valueType": "string"
+        },
+        "right": {
+          "kind": "literal",
+          "value": "upload_document",
+          "valueType": "string"
+        },
+        "operator": "equals"
+      },
+      {
+        "id": "folder",
+        "left": {
+          "kind": "field",
+          "field": "activity_input[0].destination_document_id",
+          "transform": "value",
+          "valueType": "string"
+        },
+        "right": {
+          "kind": "literal",
+          "value": "0001/10001/",
+          "valueType": "string"
+        },
+        "operator": "starts_with"
+      }
+    ],
+    "is_active": true,
+    "created_at": "2026-10-07T10:51:09.457Z"
+  }
+]

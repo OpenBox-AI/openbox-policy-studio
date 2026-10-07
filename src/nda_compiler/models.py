@@ -71,6 +71,10 @@ class Obligation(BaseModel):
     purpose: str | None = None
     duration: str | None = None
     source_quote: str
+    # Platform decision for the rules this clause produces, chosen by the judge
+    # from the platform's decision set ("shall not" -> BLOCK, "without prior
+    # written consent" -> REQUIRE_APPROVAL).
+    decision: str = "BLOCK"
     ungrounded: list[str] = Field(default_factory=list)
 
 
