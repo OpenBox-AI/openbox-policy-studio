@@ -219,16 +219,44 @@ async def agent_graph(matter: str = "trial") -> JSONResponse:
     return JSONResponse({"graphs": _graph_json(bindings), "platform": _platform_json(services)})
 
 
+def _detect_matter(text: str, chosen: str) -> str:
+    """The matter whose Disclosing Party the document names, else the chosen one.
+
+    Compiling an NDA under the wrong matter binds it to the wrong folders and
+    codenames, so the document's own party names win over the dropdown.
+    """
+
+    haystack = " ".join(text.split()).lower()
+    hits = []
+    for path in sorted(BINDINGS_DIR.glob("*.yaml")):
+        try:
+            b = load_bindings(path)
+        except Exception:
+            continue
+        names = [b.disclosing_party, *b.disclosing_party_aliases, *b.codenames]
+        score = sum(len(n) for n in names if n and n.lower() in haystack)
+        if score:
+            hits.append((score, path.stem))
+    if not hits:
+        return chosen
+    hits.sort(reverse=True)
+    if len(hits) > 1 and hits[0][0] == hits[1][0]:
+        return chosen  # a tie (two matters for one party) is the officer's call
+    return hits[0][1]
+
+
 @app.post("/propose")
 async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONResponse:
-    bindings_path = BINDINGS_DIR / f"{matter}.yaml"
-    if not bindings_path.exists():
+    if not (BINDINGS_DIR / f"{matter}.yaml").exists():
         raise HTTPException(404, f"unknown matter {matter}")
-    bindings = load_bindings(bindings_path)
     suffix = Path(nda.filename or "nda.txt").suffix or ".txt"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as handle:
         handle.write(await nda.read())
         source = Path(handle.name)
+    from . import pdf as _pdf
+
+    detected = _detect_matter(_pdf.read_text(source), matter)
+    bindings = load_bindings(BINDINGS_DIR / f"{detected}.yaml")
     services = _services(bindings)
     try:
         # Propose is read-only, so the graph runs bare here. Governing the compiler
@@ -242,9 +270,11 @@ async def propose(nda: UploadFile = File(...), matter: str = Form(...)) -> JSONR
         c.model_copy(update={"status": "draft", "remote_id": None}) for c in report.controls
     ]
     draft_id = uuid.uuid4().hex[:12]
-    _DRAFTS[draft_id] = (report, matter)
+    _DRAFTS[draft_id] = (report, detected)
     body = _report_json(report, bindings, services)
     body["draft_id"] = draft_id
+    body["matter"] = detected
+    body["matter_switched"] = detected != matter
     return JSONResponse(body)
 
 

@@ -174,8 +174,13 @@ def permitted_recipients(obligation: Obligation, bindings: Bindings) -> list[Con
         if hit:
             competitors[hit[0]] = hit[1]
     # The general folder rules come from the clause saying who may see the
-    # material. A clause that only names competitors produces competitor rules.
-    if obligation.permitted_recipients or not competitors:
+    # material. A clause that only names outsiders (competitors, bidders)
+    # produces rules for their folders, or nothing when none is mapped.
+    named_outsiders = [
+        n for n in obligation.prohibited_recipients
+        if n[:1].isupper() and not n.lower().startswith(("any", "other", "the "))
+    ]
+    if obligation.permitted_recipients or not (competitors or named_outsiders):
         for agent in bindings.representatives:
             for tool in bindings.tools_for(agent).access:
                 for folder in bindings.covered_folders:

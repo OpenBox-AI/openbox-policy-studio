@@ -43,6 +43,9 @@ from .templates import TEMPLATES, build_controls, describe, not_applicable, summ
 
 EventSource = Callable[[str], Awaitable[list[dict[str, Any]]]]
 
+# Least to most restrictive, the platform's decisions.
+STRICTNESS = ["ALLOW", "CONSTRAIN", "REQUIRE_APPROVAL", "BLOCK", "HALT"]
+
 
 class CompileState(TypedDict, total=False):
     source: str
@@ -183,8 +186,11 @@ def build_graph(services: Services):
         started = time.perf_counter()
         controls: list[Control] = []
         skipped: list[str] = []
-        # Sub-clauses often restate one duty (§2.1 and §2.2 both limiting access);
-        # an identical control is proposed once and credits every clause.
+        # Several clauses often bite on the same call (§2 "only Representatives",
+        # §4 "sub-advisers only with consent"). The platform takes the first
+        # match by priority, so two rules with the same conditions and different
+        # decisions would be settled by accident. One rule is kept per set of
+        # conditions: the strictest decision, crediting every clause behind it.
         seen: dict[str, Control] = {}
         for obligation in state["obligations"]:
             if obligation.ungrounded:
@@ -196,13 +202,17 @@ def build_graph(services: Services):
                 body = {
                     k: v
                     for k, v in control.payload.items()
-                    if k not in ("rule_name", "description", "reason", "reject_message")
+                    if k not in ("rule_name", "description", "reason", "decision", "constraints", "trust_impact")
                 }
-                key = json.dumps([control.type, control.agent_id, body], sort_keys=True)
+                key = json.dumps([control.agent_id, body], sort_keys=True)
                 if key in seen:
-                    seen[key].note = (
-                        seen[key].note + ", " if seen[key].note else "also "
-                    ) + f"§{control.clause_id}"
+                    kept = seen[key]
+                    if STRICTNESS.index(control.payload["decision"]) > STRICTNESS.index(kept.payload["decision"]):
+                        control.note = (f"also §{kept.clause_id}" if not kept.note else kept.note + f", §{kept.clause_id}")
+                        controls[controls.index(kept)] = control
+                        seen[key] = control
+                    else:
+                        kept.note = (kept.note + ", " if kept.note else "also ") + f"§{control.clause_id}"
                     continue
                 seen[key] = control
                 controls.append(control)
