@@ -6,3 +6,4 @@ output/
 .pytest_cache/
 .ruff_cache/
 dist/
+.env.agents
