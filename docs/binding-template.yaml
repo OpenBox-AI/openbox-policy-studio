@@ -1,0 +1,46 @@
+# Binding template: one file per client, saved as bindings/<firm>.yaml.
+# The Studio's "Create firm from a contract" form writes this for you; use the
+# template to write one by hand. Lines starting with # are notes and can stay.
+
+# Short name for the client, lowercase, no spaces. Must match the file name.
+firm: northwind
+
+# The client, exactly as the NDA names them, plus any other names it uses.
+disclosing_party: Northwind Holdings Ltd
+disclosing_party_aliases:
+- Northwind
+- the Company
+
+# Your side of the NDA.
+receiving_party: Sellist Advisory LLP
+
+# Project names and document markings the agent must not repeat. Can be empty: []
+codenames:
+- Project Falcon
+
+# What the information may be used for (copied from the NDA).
+purpose: evaluating the proposed transaction
+
+# Where this client's documents live, written the way the agent sees them.
+# The rules block, hold or sandbox the agent's reads and filings under these folders.
+covered_folders:
+- 0042/12001/
+
+# THE AGENT THE RULES GO ON.
+# id: from the OpenBox dashboard, Agents, click the agent: the long code after /agents/ in the address bar.
+# name: any label; it is only shown in the Studio.
+agent:
+  id: 00000000-0000-0000-0000-000000000000
+  name: research agent
+
+# The agent's tools. Leave these out if they are exactly the names below, or if
+# graphs/<agent id>.json exists (then the Studio reads the tools from it).
+# Read tools are assumed to take the document location as document_id,
+# file tools as destination_document_id.
+read_tools:          # open a document
+- read_document
+file_tools:          # save or upload into a client folder
+- upload_document
+outbound_tools:      # send anything outside: email, HTTP, chat
+- send_email
+- http_post
