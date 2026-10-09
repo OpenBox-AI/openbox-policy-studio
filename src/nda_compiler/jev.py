@@ -56,7 +56,9 @@ KIND_CRITERIA: dict[str, dict[str, Any]] = {
     ControlKind.SECURE_PROCESSING.value: {
         "what": "Requires the information to be handled only inside an isolated, secure, "
         "segregated or sandboxed environment, or never on shared infrastructure.",
-        "not_for": "Clauses about who may see it or where it may be sent.",
+        "not_for": "Clauses about who may see it or where it may be sent, and general "
+        "security duties that name no environment: meeting a security standard or "
+        "certification, using reasonable care, or reporting incidents.",
         "example": "shall be processed only within the Adviser's isolated analysis environment",
     },
     ControlKind.NOT_ENFORCEABLE.value: {
@@ -112,7 +114,17 @@ class Judge(Protocol):
 # The decision a clause states outright. Checked on the clause text, not on a
 # model's reading of it, so the same clause always yields the same decision.
 _WORDING_RULES: list[tuple[str, re.Pattern[str]]] = [
-    ("REQUIRE_APPROVAL", re.compile(r"prior written consent|with the consent|approval of|permission", re.I)),
+    (
+        "REQUIRE_APPROVAL",
+        re.compile(
+            # "prior written consent / approval / agreement", "without our written
+            # agreement", "except with the Trust's prior written approval".
+            r"prior (?:written )?(?:consent|approval|agreement)"
+            r"|with(?:out)? (?:the |our |its |their )?(?:\w+'s )?(?:prior )?(?:written )?(?:consent|approval|agreement)"
+            r"|consent of|approval of|permission",
+            re.I,
+        ),
+    ),
     ("HALT", re.compile(r"material breach|injunctive|immediate(ly)? terminat", re.I)),
 ]
 
@@ -280,13 +292,66 @@ class TypeSafeJudge:
         return 1.0 - float(result.nouls["wrong"].noul)
 
 
-def judge_from_env() -> Judge:
-    key = os.environ.get("TYPESAFE_API_KEY", "").strip()
-    if not key:
-        return FakeJudge()
-    return TypeSafeJudge(
-        key, os.environ.get("TYPESAFE_MODEL", "jev-latest").strip() or "jev-latest"
+RECIPIENT_CRITERIA: dict[str, dict[str, str]] = {
+    "true": {
+        "what": "The clause limits who may see, receive or be given the confidential "
+        "information: only certain people may receive it, it may not be disclosed to "
+        "others, or disclosure to some people needs consent. This holds even if the "
+        "clause also limits the purpose of use or does other things.",
+        "example": "use it solely to evaluate the deal and disclose it only to your "
+        "Representatives who need to know",
+    },
+    "false": {
+        "what": "The clause does not limit who may receive the information: definitions, "
+        "pure purpose limits, standstills, non-solicitation, no-contact rules, compelled "
+        "disclosure, return or destruction, remedies, term, governing law, boilerplate.",
+        "example": "for 12 months you will not solicit any employee of the Company",
+    },
+}
+
+async def clause_nouls(
+    judge: Judge, nda_text: str, clauses: list[Clause], what: str, criteria: dict[str, Any]
+) -> dict[str, float]:
+    """One yes/no per clause in one JEV call: P(true) by clause id. Empty off-line."""
+
+    if not clauses:
+        return {}
+    if hasattr(judge, "predicates"):  # the OpenAI Decisions judge
+        return await judge.predicates(nda_text, clauses, what, criteria)
+    client = getattr(judge, "_client", None)
+    if client is None:
+        return {}
+    from typesafe_sdk import Noul
+
+    questions = {
+        f"q_{i}": Noul(instructions={"what": what.format(id=c.id), "clause": c.text}, criteria=criteria)
+        for i, c in enumerate(clauses)
+    }
+    result = await client.system_one(
+        {"document": nda_text, "task": "read each numbered clause of this confidentiality agreement"},
+        questions,
+        model=judge.model,
     )
+    return {c.id: float(result.nouls[f"q_{i}"].noul) for i, c in enumerate(clauses)}
+
+
+def judge_from_env() -> Judge:
+    """The OpenAI Decisions API when OPENAI_API_KEY is set (the measured best),
+    else TypeSafe JEV, else the offline stand-in.
+    JUDGE_PROVIDER=openai-decisions|typesafe|fake overrides."""
+
+    provider = os.environ.get("JUDGE_PROVIDER", "").strip().lower()
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    typesafe_key = os.environ.get("TYPESAFE_API_KEY", "").strip()
+    if not provider:
+        provider = "openai-decisions" if openai_key else "typesafe" if typesafe_key else "fake"
+    if provider == "openai-decisions" and openai_key:
+        from .decisions import DecisionsJudge
+
+        return DecisionsJudge(openai_key, os.environ.get("OPENAI_DECISIONS_MODEL", "").strip() or "gpt-6-luna")
+    if provider == "typesafe" and typesafe_key:
+        return TypeSafeJudge(typesafe_key, os.environ.get("TYPESAFE_MODEL", "jev-latest").strip() or "jev-latest")
+    return FakeJudge()
 
 
 async def verify_all(judge: Judge, items: list[tuple[Clause, dict[str, Any], str]]) -> list[float]:

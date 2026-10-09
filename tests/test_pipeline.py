@@ -81,6 +81,21 @@ async def test_compile_emits_grounded_controls(services):
 
 
 async def test_ungrounded_extraction_goes_to_review(services):
+    # A marking a rule would match on must be in the NDA word for word.
+    class LyingExtractor(FakeExtractor):
+        async def extract(self, clause, kind, definitions):
+            obligation = await super().extract(clause, kind, definitions)
+            return obligation.model_copy(update={"marked_terms": ["Project Dr Pepper"]})
+
+    services.extractor = LyingExtractor()
+    report = await compile_nda(NDA, services)
+    assert any("Project Dr Pepper" in item for item in report.review)
+    assert not [c for c in report.controls if c.type == "policy_rule"]
+
+
+async def test_invented_recipient_is_dropped_not_the_clause(services):
+    # A recipient never reaches a rule's conditions; one the clause does not
+    # name is filtered out and the clause keeps its rules.
     class LyingExtractor(FakeExtractor):
         async def extract(self, clause, kind, definitions):
             obligation = await super().extract(clause, kind, definitions)
@@ -88,5 +103,6 @@ async def test_ungrounded_extraction_goes_to_review(services):
 
     services.extractor = LyingExtractor()
     report = await compile_nda(NDA, services)
-    assert any("Dr Pepper" in item for item in report.review)
-    assert not [c for c in report.controls if c.type == "policy_rule"]
+    assert not any("Dr Pepper" in item for item in report.review)
+    assert [c for c in report.controls if c.type == "policy_rule"]
+    assert not any("Dr Pepper" in o.prohibited_recipients for o in report.obligations)
