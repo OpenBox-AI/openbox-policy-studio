@@ -26,14 +26,15 @@ from langgraph.graph import END, START, StateGraph
 from . import conflicts, pdf
 from .agent_graph import AgentGraph, observe, with_roles
 from .bindings import Bindings
-from .extract import Extractor, extract_all, in_clause
-from .jev import Judge, decision_from_wording, verify_all
+from .extract import Extractor, extract_all, in_clause, outsider_names
+from .jev import RECIPIENT_CRITERIA, Judge, clause_nouls, decision_from_wording, verify_all
 from .models import (
     ENFORCEABLE_KINDS,
     Classification,
     Clause,
     CompileReport,
     Control,
+    ControlKind,
     Obligation,
     StageTiming,
 )
@@ -146,6 +147,29 @@ def build_graph(services: Services):
             for c in state["classifications"]
             if c.kind in ENFORCEABLE_KINDS
         ]
+        # Recipient check (RECIPIENT_CHECK, on by default): a clause the
+        # classifier filed under another kind may still limit who may receive
+        # the material ("use it only for the deal and disclose it only to
+        # Representatives"). The judge answers that as its own yes/no; the
+        # nominated clauses are read again as recipient limits, and the
+        # extractor's "applies" answer drops the ones that are not.
+        if os.environ.get("RECIPIENT_CHECK", "1").strip() != "0":
+            threshold = float(os.environ.get("RECIPIENT_CHECK_THRESHOLD", "0.8"))
+            others = [
+                by_id[c.clause_id]
+                for c in state["classifications"]
+                if c.kind not in (ControlKind.PERMITTED_RECIPIENTS, ControlKind.DEFINITION)
+            ]
+            probs = await clause_nouls(
+                services.judge,
+                state["nda_text"],
+                others,
+                "Does clause {id} limit who may receive the confidential information?",
+                RECIPIENT_CRITERIA,
+            )
+            items += [
+                (by_id[cid], ControlKind.PERMITTED_RECIPIENTS) for cid, p in probs.items() if p >= threshold
+            ]
         obligations = await extract_all(
             services.extractor, items, state["definitions"], state["nda_text"]
         )
@@ -174,12 +198,61 @@ def build_graph(services: Services):
         # a BLOCK. Deterministic on purpose: the same clause must always give
         # the same rule, and a model asked to choose between BLOCK and HALT on
         # a clause that says neither answered differently run to run.
+        # With the v2 prompt the model answers two plain questions about the
+        # clause (does consent unlock it, is its breach material); the keyword
+        # check stays as the fallback when it was not asked.
+        def decision(o: Obligation) -> str:
+            if o.breach_is_material:
+                return "HALT"
+            if o.consent_unlocks is not None:
+                return "REQUIRE_APPROVAL" if o.consent_unlocks else (
+                    "HALT" if decision_from_wording(by_id[o.clause_id].text) == "HALT" else "BLOCK"
+                )
+            return decision_from_wording(by_id[o.clause_id].text) or "BLOCK"
+
+        # A clause the model reads as imposing no duty of the classified kind
+        # (a standstill or no-contact clause classified as an access limit)
+        # yields no rule.
+        dropped = [o for o in obligations if o.applies is False]
+        obligations = [
+            o.model_copy(update={"decision": decision(o)}) for o in obligations if o.applies is not False
+        ]
+        # Named organisations are never permitted recipients of the counterparty's
+        # material: a clause that names bidders or competitors forbids them, in
+        # whichever list the model put them.
         obligations = [
             o.model_copy(
-                update={"decision": decision_from_wording(by_id[o.clause_id].text) or "BLOCK"}
+                update={
+                    "permitted_recipients": [p for p in o.permitted_recipients if p not in named],
+                    "prohibited_recipients": [*o.prohibited_recipients, *(n for n in named if n not in o.prohibited_recipients)],
+                }
             )
+            if o.kind == ControlKind.PERMITTED_RECIPIENTS
+            and (named := outsider_names(o.permitted_recipients, state["nda_text"]))
+            else o
             for o in obligations
         ]
+        # "Any transmission in breach of clause 4.1 shall be a material breach":
+        # a sub-clause that only states the consequence of breaching another
+        # raises that clause's decision, even though it is not a duty itself.
+        enforced = {o.clause_id for o in obligations}
+        raised: dict[str, str] = {}
+        for c in state["classifications"]:
+            clause = by_id[c.clause_id]
+            if c.kind in ENFORCEABLE_KINDS or "breach" not in clause.text.lower():
+                continue
+            if decision_from_wording(clause.text) != "HALT":
+                continue
+            for ref in clause.references:
+                if ref in enforced:
+                    raised[ref] = "HALT"
+        obligations = [
+            o.model_copy(update={"decision": "HALT"})
+            if o.clause_id in raised and STRICTNESS.index("HALT") > STRICTNESS.index(o.decision)
+            else o
+            for o in obligations
+        ]
+        review = [*review, *(f"§{o.clause_id}: read as imposing no {o.kind.value} duty; no rule proposed" for o in dropped)]
         return _timed("extract", state, started, {"obligations": obligations, "review": review})
 
     async def build(state: CompileState) -> dict:

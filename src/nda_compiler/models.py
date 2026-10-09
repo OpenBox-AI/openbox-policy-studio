@@ -78,6 +78,15 @@ class Obligation(BaseModel):
     # written consent" -> REQUIRE_APPROVAL).
     decision: str = "BLOCK"
     ungrounded: list[str] = Field(default_factory=list)
+    # Filled only by the v2 extraction prompt; None means "not asked".
+    # applies: does the clause really impose the classified kind of duty?
+    # consent_unlocks: may the restricted action happen with the disclosing
+    # party's consent, however that is worded? breach_is_material: does the
+    # clause itself make its breach a material breach, termination or
+    # injunction event?
+    applies: bool | None = None
+    consent_unlocks: bool | None = None
+    breach_is_material: bool | None = None
 
 
 # One type: a policy rule on the agent's Policies tab. Nothing else is proposed.
