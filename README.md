@@ -142,7 +142,7 @@ and apply again.
 You need [uv](https://docs.astral.sh/uv/) (a Python tool runner) and the keys below.
 
 ```bash
-git clone https://github.com/ash-krnl/openbox-policy-studio.git
+git clone https://github.com/OpenBox-AI/openbox-policy-studio.git
 cd openbox-policy-studio
 uv sync
 cp .env.example .env     # then open .env and fill in the keys
