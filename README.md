@@ -10,7 +10,6 @@ If you have never used OpenBox or the Studio, read this page from the top.
 It takes about 15 minutes to set up the first client.
 
 PDFs in this folder:
-[`OpenBox-Policy-Studio-Quick-Guide.pdf`](OpenBox-Policy-Studio-Quick-Guide.pdf) (one page),
 [`OpenBox-Policy-Studio-Beginners-Guide.pdf`](OpenBox-Policy-Studio-Beginners-Guide.pdf) (this
 page's setup sections) and
 [`OpenBox-Policy-Studio-Accuracy.pdf`](OpenBox-Policy-Studio-Accuracy.pdf) (the accuracy report).
