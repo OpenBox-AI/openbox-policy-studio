@@ -64,6 +64,11 @@ class HttpBackend:
             return control.model_copy(
                 update={"status": "failed", "note": f"{exc.response.status_code}: {body}"}
             )
+        except httpx.TransportError as exc:
+            # A timeout fails this rule only; the rest of the Apply carries on.
+            return control.model_copy(
+                update={"status": "failed", "note": f"no response from OpenBox ({type(exc).__name__})"}
+            )
 
     async def _policy_rule(self, control: Control) -> Control:
         """Create the rule, or version it if a rule with this name already exists.
@@ -113,14 +118,21 @@ class HttpBackend:
         return control.model_copy(update={"status": "active", "remote_id": version_id, "note": note})
 
     async def _current_by_name(self, base: str, rule_name: str) -> dict[str, Any] | None:
-        response = await self._client.get(base, params={"limit": 200})
-        if response.status_code >= 300:
-            return None
-        page = _unwrap(response.json())
-        rules = page.get("data", page) if isinstance(page, dict) else page
-        for rule in rules or []:
-            if rule.get("rule_name") == rule_name and rule.get("is_current_version", True):
-                return rule
+        # The list is paged (page from 0, perPage); an agent with more rules than
+        # one page holds must be read to the end, or an existing rule is missed
+        # and creating it again fails with POLICY_RULE_NAME_TAKEN.
+        per_page = 100
+        for page_no in range(50):
+            response = await self._client.get(base, params={"page": page_no, "perPage": per_page})
+            if response.status_code >= 300:
+                return None
+            page = _unwrap(response.json())
+            rules = page.get("data", page) if isinstance(page, dict) else page
+            for rule in rules or []:
+                if rule.get("rule_name") == rule_name and rule.get("is_current_version", True):
+                    return rule
+            if not rules or len(rules) < per_page:
+                return None
         return None
 
     async def _post(self, path: str, body: dict[str, Any]) -> httpx.Response:
@@ -214,5 +226,16 @@ def backend_from_env() -> OpenBoxBackend:
     return HttpBackend(url, key)
 
 
+# Each save rebuilds the agent's policy bundle on the backend; a handful at a
+# time keeps a long NDA's Apply inside the request timeout.
+APPLY_CONCURRENCY = int(os.environ.get("OPENBOX_APPLY_CONCURRENCY", "3"))
+
+
 async def apply_all(backend: OpenBoxBackend, controls: list[Control]) -> list[Control]:
-    return list(await asyncio.gather(*(backend.apply(c) for c in controls)))
+    gate = asyncio.Semaphore(max(1, APPLY_CONCURRENCY))
+
+    async def one(control: Control) -> Control:
+        async with gate:
+            return await backend.apply(control)
+
+    return list(await asyncio.gather(*(one(c) for c in controls)))
