@@ -39,8 +39,8 @@ example `bindings/atlas.yaml`. Every file there appears in the Studio's
 ### Step 1: find your agent in OpenBox
 
 1. Sign in to the OpenBox dashboard and open **Agents**.
-2. If your agent is not there yet, create it first (or ask whoever runs the
-   agent to register it). The Studio cannot create agents for you.
+2. If your agent is not there yet, ask whoever runs the agent to register it,
+   or register it from the binding (see "Check or register the agent" below).
 3. Click the agent. Its **agent ID** is the long code in the address bar
    after `/agents/`, for example `16e4c8e5-0921-4946-ae5b-96fe1966e57d`.
 
@@ -82,6 +82,22 @@ agent:                               # THE AGENT THE RULES GO ON
   id: 16e4c8e5-0921-4946-ae5b-96fe1966e57d   # from the OpenBox dashboard (Step 1)
   name: compliance agent                     # any label; shown in the Studio
 ```
+
+### Check or register the agent
+
+Once the binding exists, one command confirms its agent is real:
+
+```bash
+uv run python scripts/bootstrap_agents.py bindings/northwind.yaml
+```
+
+- If `agent.id` is filled in, it checks that agent exists in the organisation
+  of your `OPENBOX_ORG_API_KEY`, and tells you if it does not. A wrong ID is
+  the most common reason rules end up somewhere unexpected.
+- If `agent.id` is still the template's placeholder
+  (`00000000-0000-0000-0000-000000000000`), it registers a new agent in
+  OpenBox under `agent.name`, writes the new ID into the binding, and saves
+  the agent's own keys to `.env.agents` for whoever runs the agent.
 
 ### Step 3: tell the Studio your agent's tools
 

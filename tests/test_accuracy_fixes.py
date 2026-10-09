@@ -199,3 +199,19 @@ def test_providers_follow_the_keys(monkeypatch, env, extractor, judge):
         monkeypatch.setenv(name, value)
     assert type(extractor_from_env()).__name__ == extractor
     assert type(judge_from_env()).__name__ == judge
+
+
+def test_bootstrap_writes_the_agent_id_into_the_binding_and_keeps_comments(tmp_path):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("bootstrap", ROOT / "scripts" / "bootstrap_agents.py")
+    bootstrap = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bootstrap)
+
+    binding = tmp_path / "northwind.yaml"
+    binding.write_text((ROOT / "docs" / "binding-template.yaml").read_text())
+    bootstrap._write_id(binding, "11111111-2222-4333-8444-555555555555")
+    text = binding.read_text()
+    assert "  id: 11111111-2222-4333-8444-555555555555" in text
+    assert "# THE AGENT THE RULES GO ON." in text and "covered_folders:" in text
+    assert load_bindings(binding).agent.id == "11111111-2222-4333-8444-555555555555"
