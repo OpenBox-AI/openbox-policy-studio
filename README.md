@@ -154,7 +154,7 @@ uv run nda-web           # then open http://127.0.0.1:8010
 | Key | Needed for | Where to get it |
 |---|---|---|
 | `OPENBOX_ORG_API_KEY` | listing your agents and adding rules to them | OpenBox dashboard, your organisation's settings (starts with `obx_key_`) |
-| `OPENBOX_BACKEND_URL` | which OpenBox to talk to | `https://api.openbox.ai`, or your environment's API address, for example staging `https://openbox-api.node.lat` |
+| `OPENBOX_BACKEND_URL` | which OpenBox to talk to | `https://api.openbox.ai`, or your environment's API address |
 | `ANTHROPIC_API_KEY` | reading each clause of the NDA (Claude Sonnet 5.5) | console.anthropic.com |
 | `OPENAI_API_KEY` | sorting clauses and checking rules (OpenAI Decisions API, `gpt-6-luna`) | platform.openai.com |
 | `TYPESAFE_API_KEY` | optional alternative to the OpenAI key for sorting and checking | TypeSafe |
