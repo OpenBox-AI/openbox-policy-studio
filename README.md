@@ -9,6 +9,10 @@ them. Nothing changes in OpenBox until you press Apply.
 If you have never used OpenBox or the Studio, read this page from the top.
 It takes about 15 minutes to set up the first client.
 
+PDF in this folder:
+[`OpenBox-Policy-Studio-Beginners-Guide.pdf`](OpenBox-Policy-Studio-Beginners-Guide.pdf) (this
+page's setup sections).
+
 ## Words you will see
 
 | Word | What it means |
