@@ -95,7 +95,24 @@ def split_clauses(text: str) -> list[Clause]:
         if current_id is not None:
             buffer.append(line)
     flush()
-    return clauses
+    return _unique_ids(clauses)
+
+
+def _unique_ids(clauses: list[Clause]) -> list[Clause]:
+    """Amendments and schedules often number their clauses from 1 again.
+
+    Every later stage looks clauses up by id, so a repeated id would hide the
+    earlier clause (the main confidentiality clause behind an amendment's
+    clause 2). A repeat keeps its number with an occurrence suffix: 2, 2~2.
+    """
+
+    seen: dict[str, int] = {}
+    out = []
+    for clause in clauses:
+        n = seen.get(clause.id, 0) + 1
+        seen[clause.id] = n
+        out.append(clause if n == 1 else clause.model_copy(update={"id": f"{clause.id}~{n}"}))
+    return out
 
 
 def definitions_text(clauses: list[Clause]) -> str:
